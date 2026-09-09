@@ -4,7 +4,7 @@ module.exports = {
   testEnvironment: 'node',
   rootDir: '.',
   testMatch: ['<rootDir>/tests/**/*.test.ts'],
-  setupFiles: ['dotenv/config'],
+  setupFiles: ['<rootDir>/tests/setupEnv.js'],
   collectCoverageFrom: [
     'src/modules/**/*.service.ts',
     'src/domain/**/*.ts',

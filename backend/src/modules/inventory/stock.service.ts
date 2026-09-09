@@ -18,7 +18,14 @@ const TRANSIENT_PG_CODES = new Set(['40001', '40P01', '55P03']);
 
 function isTransientError(err: unknown): boolean {
   const code = (err as { code?: string } | undefined)?.code;
-  return !!code && TRANSIENT_PG_CODES.has(code);
+  if (code && TRANSIENT_PG_CODES.has(code)) return true;
+
+  // Prisma's own "couldn't get a connection / acquire the row lock in time" errors
+  // (not a Postgres error code — Prisma raises this client-side against its
+  // interactive-transaction maxWait budget) show up under high concurrency, e.g. the
+  // anti-oversell burst test. They are exactly as transient as a lock conflict.
+  const message = err instanceof Error ? err.message : '';
+  return /unable to start a transaction in the given time/i.test(message);
 }
 
 function sleep(ms: number) {
@@ -81,7 +88,15 @@ async function runWithRetry<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
     try {
       return await prisma.$transaction(
         async (tx) => fn(tx),
-        { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+          // Prisma's defaults (maxWait 2s / timeout 5s) are sized for ordinary request
+          // traffic, not dozens of transactions all queueing for the SAME row lock at
+          // once (a flash-sale burst). Widen both so a request queues instead of
+          // erroring out while a legitimate lock ahead of it is still being processed.
+          maxWait: 20000,
+          timeout: 20000,
+        },
       );
     } catch (err) {
       if (err instanceof BusinessRuleError) throw err;

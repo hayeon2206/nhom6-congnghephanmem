@@ -25,7 +25,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      DATABASE_URL: postgresql://oism:oism_password@db:5432/oism?schema=public
+      DATABASE_URL: postgresql://oism:oism_password@db:5432/oism?schema=public&connection_limit=30&pool_timeout=30
       JWT_ACCESS_SECRET: change_this_access_secret_min_32_chars_______
       JWT_REFRESH_SECRET: change_this_refresh_secret_min_32_chars______
       JWT_ACCESS_EXPIRES_IN: 60m

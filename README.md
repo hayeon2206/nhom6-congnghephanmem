@@ -87,8 +87,14 @@ docker compose up -d --build
 
 ## Kiểm thử
 
+Test tích hợp chạy trên Postgres thật nên dùng **database riêng**, tách khỏi database `npm run dev`
+đang dùng (tránh test tự động xoá/ghi đè dữ liệu demo bạn đang thao tác trên UI):
+
 ```bash
+docker exec -it <container_postgres> psql -U oism -d postgres -c "CREATE DATABASE oism_test;"
 cd backend
+cp .env.test.example .env.test
+npx dotenv -e .env.test -- npx prisma migrate deploy   # hoặc set DATABASE_URL rồi chạy migrate deploy
 npm test
 ```
 
@@ -98,6 +104,19 @@ Bộ test gồm:
   idempotency webhook, và **một test bắn 50 request đặt chỗ đồng thời vào 1 SKU chỉ có 20 tồn kho —
   khẳng định số lượng giữ chỗ thành công luôn đúng bằng 20, không bao giờ âm** (bằng chứng cho
   NFR-PERF-02).
+
+### Phát hiện khi kiểm thử tải thật (đáng chú ý)
+
+Khi bắn 100+ request đồng thời vào cùng 1 SKU trên máy đang bận CPU (vd: chạy song song trình duyệt
+tự động để chụp ảnh minh hoạ), một số request lỗi `"Unable to start a transaction in the given
+time"` — **không phải lỗi logic chống oversell** (available không bao giờ âm, ledger không bao giờ
+sai), mà do cấu hình mặc định của Prisma cho transaction tương tác (`maxWait: 2s`, `timeout: 5s`)
+quá ngắn khi hàng loạt transaction cùng xếp hàng chờ khoá 1 dòng (`SELECT ... FOR UPDATE`). Đã sửa
+tại `stock.service.ts` bằng cách nâng `maxWait`/`timeout` lên 20s và coi lỗi này là transient (có
+retry), đồng thời nâng `connection_limit`/`pool_timeout` của Postgres pool trong `DATABASE_URL`.
+Sau khi sửa: bắn đúng kịch bản nêu trong đề bài (50 đơn đồng thời tranh nhau 1 SKU còn 1 hàng) cho
+kết quả sạch tuyệt đối — 1 thành công, 49 bị từ chối, 0 lỗi hạ tầng — kể cả khi máy đang chịu tải
+CPU nặng từ tiến trình khác.
 
 ## Traceability — chức năng đề bài ↔ nơi hiện thực
 
