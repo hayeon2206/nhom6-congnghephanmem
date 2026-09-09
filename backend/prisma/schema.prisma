@@ -1,0 +1,372 @@
+// OISM - Omnichannel Inventory and Sales Management System
+// Prisma schema — PostgreSQL, multi-tenant (shared DB, TenantId column pattern).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  STAFF
+  CASHIER
+}
+
+enum OrderState {
+  DRAFT
+  RESERVED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderChannel {
+  POS
+  ADMIN
+  SHOPEE
+  TIKTOK
+  LAZADA
+}
+
+enum LedgerType {
+  IMPORT
+  SALE
+  RETURN
+  STOCKTAKE
+  TRANSFER_OUT
+  TRANSFER_IN
+  ADJUSTMENT
+}
+
+enum PurchaseReceiptStatus {
+  DRAFT
+  CONFIRMED
+}
+
+enum TransferStatus {
+  DRAFT
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+enum StocktakeStatus {
+  OPEN
+  COMPLETED
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  users              User[]
+  branches           Branch[]
+  categories         Category[]
+  brands             Brand[]
+  products           Product[]
+  orders             Order[]
+  purchaseReceipts   PurchaseReceipt[]
+  inventoryTransfers InventoryTransfer[]
+  stocktakeSessions  StocktakeSession[]
+  ledgerEntries      InventoryTransaction[]
+  webhookLogs        WebhookLog[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  email        String
+  phone        String?
+  passwordHash String
+  role         Role     @default(STAFF)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  refreshTokens RefreshToken[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model Branch {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  address     String?
+  phone       String?
+  isWarehouse Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  stockItems         StockItem[]
+  orders             Order[]
+  ledgerEntries      InventoryTransaction[]
+  purchaseReceipts   PurchaseReceipt[]
+  transfersFrom      InventoryTransfer[]   @relation("TransferFrom")
+  transfersTo        InventoryTransfer[]   @relation("TransferTo")
+  stocktakeSessions  StocktakeSession[]
+
+  @@index([tenantId])
+}
+
+model Brand {
+  id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  products    Product[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Category {
+  id               String     @id @default(uuid())
+  tenantId         String
+  tenant           Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name             String
+  description      String?
+  parentCategoryId String?
+  parentCategory   Category?  @relation("CategoryTree", fields: [parentCategoryId], references: [id])
+  children         Category[] @relation("CategoryTree")
+  products         Product[]
+
+  @@index([tenantId])
+}
+
+model Product {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name              String
+  skuCode           String
+  barcode           String?
+  categoryId        String?
+  category          Category? @relation(fields: [categoryId], references: [id])
+  brandId           String?
+  brand             Brand?    @relation(fields: [brandId], references: [id])
+  attributes        Json?    // eg. { "color": "Do", "size": "M" } for variant-style products
+  costPrice         Decimal  @default(0) @db.Decimal(18, 2)
+  sellingPrice      Decimal  @default(0) @db.Decimal(18, 2)
+  wholesalePrice    Decimal? @db.Decimal(18, 2)
+  reorderThreshold  Int      @default(5)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  stockItems           StockItem[]
+  orderItems           OrderItem[]
+  ledgerEntries        InventoryTransaction[]
+  purchaseReceiptItems PurchaseReceiptItem[]
+  transferItems        InventoryTransferItem[]
+  stocktakeItems       StocktakeItem[]
+
+  @@unique([tenantId, skuCode])
+  @@unique([tenantId, barcode])
+  @@index([tenantId, name])
+}
+
+// Per-branch stock — separates catalog (Product) from physical stock levels.
+model StockItem {
+  id        String  @id @default(uuid())
+  tenantId  String
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  branchId  String
+  branch    Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  onHand    Int     @default(0)
+  reserved  Int     @default(0)
+
+  @@unique([tenantId, productId, branchId])
+  @@index([tenantId, branchId])
+}
+
+// Append-only inventory ledger (FR-INV-01 / NFR-SEC-03). No update/delete in app layer.
+model InventoryTransaction {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId     String
+  branch       Branch     @relation(fields: [branchId], references: [id])
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  type         LedgerType
+  quantity     Int        // signed delta applied to onHand
+  balanceAfter Int        // onHand after applying quantity
+  referenceId  String     // PurchaseReceiptId / OrderId / TransferId / StocktakeSessionId
+  note         String?
+  createdAt    DateTime   @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, productId])
+  @@index([tenantId, branchId])
+}
+
+model PurchaseReceipt {
+  id           String                @id @default(uuid())
+  tenantId     String
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId     String
+  branch       Branch                @relation(fields: [branchId], references: [id])
+  code         String
+  supplierName String?
+  status       PurchaseReceiptStatus @default(DRAFT)
+  createdAt    DateTime              @default(now())
+  confirmedAt  DateTime?
+
+  items PurchaseReceiptItem[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model PurchaseReceiptItem {
+  id                String          @id @default(uuid())
+  tenantId          String
+  purchaseReceiptId String
+  purchaseReceipt   PurchaseReceipt @relation(fields: [purchaseReceiptId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product         @relation(fields: [productId], references: [id])
+  quantity          Int
+  unitCost          Decimal         @db.Decimal(18, 2)
+
+  @@index([tenantId, purchaseReceiptId])
+}
+
+model InventoryTransfer {
+  id           String         @id @default(uuid())
+  tenantId     String
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code         String
+  fromBranchId String
+  fromBranch   Branch         @relation("TransferFrom", fields: [fromBranchId], references: [id])
+  toBranchId   String
+  toBranch     Branch         @relation("TransferTo", fields: [toBranchId], references: [id])
+  status       TransferStatus @default(DRAFT)
+  note         String?
+  createdAt    DateTime       @default(now())
+  dispatchedAt DateTime?
+  receivedAt   DateTime?
+
+  items InventoryTransferItem[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model InventoryTransferItem {
+  id         String            @id @default(uuid())
+  tenantId   String
+  transferId String
+  transfer   InventoryTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product           @relation(fields: [productId], references: [id])
+  quantity   Int
+
+  @@index([tenantId, transferId])
+}
+
+model StocktakeSession {
+  id          String          @id @default(uuid())
+  tenantId    String
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId    String
+  branch      Branch          @relation(fields: [branchId], references: [id])
+  code        String
+  status      StocktakeStatus @default(OPEN)
+  note        String?
+  createdAt   DateTime        @default(now())
+  completedAt DateTime?
+
+  items StocktakeItem[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model StocktakeItem {
+  id          String           @id @default(uuid())
+  tenantId    String
+  sessionId   String
+  session     StocktakeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product          @relation(fields: [productId], references: [id])
+  systemQty   Int
+  countedQty  Int
+  difference  Int
+
+  @@index([tenantId, sessionId])
+}
+
+model Order {
+  id             String       @id @default(uuid())
+  tenantId       String
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  branchId       String
+  branch         Branch       @relation(fields: [branchId], references: [id])
+  channel        OrderChannel
+  externalOrderId String
+  state          OrderState   @default(DRAFT)
+  customerName   String?
+  customerPhone  String?
+  paymentMethod  String?
+  createdAt      DateTime     @default(now())
+  reservedAt     DateTime?
+  confirmedAt    DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+
+  items OrderItem[]
+
+  @@unique([tenantId, channel, externalOrderId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, state])
+}
+
+model OrderItem {
+  id                String  @id @default(uuid())
+  tenantId          String
+  orderId           String
+  order             Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId         String
+  product           Product @relation(fields: [productId], references: [id])
+  quantity          Int
+  sellingPrice      Decimal @db.Decimal(18, 2)
+  snapshotCostPrice Decimal @db.Decimal(18, 2)
+
+  @@index([tenantId, orderId])
+}
+
+model WebhookLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channel    String
+  payload    Json
+  orderId    String?
+  isDuplicate Boolean @default(false)
+  receivedAt DateTime @default(now())
+
+  @@index([tenantId, receivedAt])
+}

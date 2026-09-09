@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oism
+      POSTGRES_PASSWORD: oism_password
+      POSTGRES_DB: oism
+    ports:
+      - "5432:5432"
+    volumes:
+      - oism_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oism"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://oism:oism_password@db:5432/oism?schema=public
+      JWT_ACCESS_SECRET: change_this_access_secret_min_32_chars_______
+      JWT_REFRESH_SECRET: change_this_refresh_secret_min_32_chars______
+      JWT_ACCESS_EXPIRES_IN: 60m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:5173
+      RESERVATION_EXPIRY_MINUTES: 30
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build: ./oism-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: http://localhost:4000
+    ports:
+      - "5173:80"
+
+volumes:
+  oism_pgdata:

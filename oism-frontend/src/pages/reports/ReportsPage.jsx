@@ -1,0 +1,176 @@
+import { useEffect, useState } from 'react';
+import { Tabs, Typography, Row, Col, Card, Statistic, DatePicker, Select, Space, Table, Progress, Tag } from 'antd';
+import dayjs from 'dayjs';
+import { reportsApi } from '../../api/resources';
+import { useUiStore } from '../../store/uiStore';
+
+const { RangePicker } = DatePicker;
+const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
+
+function RevenueTab() {
+  const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
+  const [range, setRange] = useState([dayjs().startOf('month'), dayjs()]);
+  const [report, setReport] = useState(null);
+
+  useEffect(() => {
+    reportsApi
+      .revenue({ from: range[0]?.toISOString(), to: range[1]?.toISOString(), branchId: selectedBranchId })
+      .then(setReport);
+  }, [range, selectedBranchId]);
+
+  const maxRevenue = Math.max(1, ...(report?.revenueByProduct.map((p) => p.value) ?? [1]));
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <RangePicker value={range} onChange={setRange} />
+        <Select
+          style={{ width: 200 }}
+          allowClear
+          placeholder="Tất cả chi nhánh"
+          value={selectedBranchId}
+          onChange={setSelectedBranchId}
+          options={branches.map((b) => ({ value: b.id, label: b.name }))}
+        />
+      </Space>
+
+      <Row gutter={16}>
+        <Col span={6}>
+          <Card><Statistic title="Doanh thu thuần" value={money(report?.totalRevenue)} /></Card>
+        </Col>
+        <Col span={6}>
+          <Card><Statistic title="Tổng giá vốn (COGS)" value={money(report?.totalCostOfGoodsSold)} /></Card>
+        </Col>
+        <Col span={6}>
+          <Card><Statistic title="Lợi nhuận gộp" value={money(report?.grossProfit)} valueStyle={{ color: '#3f8600' }} /></Card>
+        </Col>
+        <Col span={6}>
+          <Card><Statistic title="Biên lợi nhuận" value={`${report?.grossMarginPercent ?? 0}%`} /></Card>
+        </Col>
+      </Row>
+
+      <Card title="Doanh thu theo sản phẩm" style={{ marginTop: 16 }}>
+        {report?.revenueByProduct
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10)
+          .map((p) => (
+            <div key={p.key} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{p.key}</span>
+                <span>{money(p.value)}</span>
+              </div>
+              <Progress percent={Math.round((p.value / maxRevenue) * 100)} showInfo={false} />
+            </div>
+          ))}
+      </Card>
+    </div>
+  );
+}
+
+function VelocityTab() {
+  const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
+  const [report, setReport] = useState(null);
+
+  useEffect(() => {
+    reportsApi.velocity({ branchId: selectedBranchId }).then(setReport);
+  }, [selectedBranchId]);
+
+  return (
+    <div>
+      <Select
+        style={{ width: 200, marginBottom: 16 }}
+        allowClear
+        placeholder="Tất cả chi nhánh"
+        value={selectedBranchId}
+        onChange={setSelectedBranchId}
+        options={branches.map((b) => ({ value: b.id, label: b.name }))}
+      />
+
+      <Card>
+        <Statistic title="Tổng giá trị tồn kho (theo giá vốn)" value={money(report?.totalInventoryValue)} />
+      </Card>
+
+      <Row gutter={16} style={{ marginTop: 16 }}>
+        <Col span={12}>
+          <Card title="Bán chạy nhất (Best sellers)">
+            <Table
+              size="small"
+              rowKey="productId"
+              pagination={false}
+              dataSource={report?.bestSellers}
+              columns={[
+                { title: 'Sản phẩm', dataIndex: 'name' },
+                { title: 'SL đã bán', dataIndex: 'unitsSold', align: 'right' },
+              ]}
+            />
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="Bán chậm (Slow movers)">
+            <Table
+              size="small"
+              rowKey="productId"
+              pagination={false}
+              dataSource={report?.slowMovers}
+              columns={[
+                { title: 'Sản phẩm', dataIndex: 'name' },
+                { title: 'Tồn kho', dataIndex: 'onHand', align: 'right' },
+                { title: 'SL đã bán', dataIndex: 'unitsSold', align: 'right' },
+              ]}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+}
+
+function StockAlertsTab() {
+  const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
+  const [alerts, setAlerts] = useState([]);
+
+  useEffect(() => {
+    reportsApi.stockAlerts(selectedBranchId).then(setAlerts);
+  }, [selectedBranchId]);
+
+  return (
+    <div>
+      <Select
+        style={{ width: 200, marginBottom: 16 }}
+        allowClear
+        placeholder="Tất cả chi nhánh"
+        value={selectedBranchId}
+        onChange={setSelectedBranchId}
+        options={branches.map((b) => ({ value: b.id, label: b.name }))}
+      />
+      <Table
+        rowKey={(r) => r.productId + r.branchId}
+        dataSource={alerts}
+        columns={[
+          { title: 'Sản phẩm', dataIndex: 'productName' },
+          { title: 'SKU', dataIndex: 'skuCode' },
+          { title: 'Chi nhánh', dataIndex: 'branchName' },
+          { title: 'Khả dụng', dataIndex: 'available', align: 'right', render: (v) => <Tag color="red">{v}</Tag> },
+          { title: 'Ngưỡng cảnh báo', dataIndex: 'threshold', align: 'right' },
+        ]}
+      />
+    </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <div>
+      <div className="page-header">
+        <Typography.Title level={3}>Báo cáo</Typography.Title>
+      </div>
+      <Tabs
+        items={[
+          { key: 'revenue', label: 'Doanh thu & Lợi nhuận (FR-REP-01)', children: <RevenueTab /> },
+          { key: 'velocity', label: 'Tồn kho & Vòng quay (FR-REP-02)', children: <VelocityTab /> },
+          { key: 'alerts', label: 'Cảnh báo tồn kho (FR-REP-03)', children: <StockAlertsTab /> },
+        ]}
+      />
+    </div>
+  );
+}
