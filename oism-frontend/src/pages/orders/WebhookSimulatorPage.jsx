@@ -67,7 +67,12 @@ export default function WebhookSimulatorPage() {
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Giả lập Webhook thương mại điện tử (FR-SIM)</Typography.Title>
+        <div>
+          <Typography.Title level={3}>Giả lập đơn hàng sàn TMĐT</Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            Công cụ kiểm thử: mô phỏng đơn hàng đổ về từ Shopee, TikTok Shop, Lazada để kiểm tra hệ thống xử lý đúng trước khi kết nối kênh thật.
+          </Typography.Paragraph>
+        </div>
       </div>
 
       <Row gutter={16}>
@@ -120,10 +125,10 @@ export default function WebhookSimulatorPage() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Kiểm thử tải đồng thời — Anti-Oversell (NFR-PERF-02)">
+          <Card title="Kiểm thử chống bán vượt tồn kho">
             <Typography.Paragraph type="secondary">
-              Bắn N đơn hàng đồng thời vào cùng 1 SKU để kiểm tra khoá tồn kho hoạt động đúng: tổng số đơn được giữ chỗ
-              thành công không bao giờ vượt quá tồn khả dụng.
+              Gửi nhiều đơn hàng cùng lúc vào một sản phẩm để kiểm chứng: dù bao nhiêu đơn ập về cùng lúc, tổng số lượng
+              được giữ chỗ thành công không bao giờ vượt quá số hàng thực sự còn trong kho.
             </Typography.Paragraph>
             <Form layout="vertical" form={burstForm} initialValues={{ channel: 'SHOPEE', branchId: selectedBranchId, quantityPerOrder: 1, concurrentOrders: 20 }}>
               <Space.Compact style={{ width: '100%' }}>
@@ -160,7 +165,7 @@ export default function WebhookSimulatorPage() {
                 type="success"
                 showIcon
                 message={`Kết quả: ${burstResult.reserved}/${burstResult.total} đơn giữ chỗ thành công, ${burstResult.rejected} bị từ chối do hết hàng, ${burstResult.failed} lỗi khác.`}
-                description="Không có trường hợp nào khả dụng bị âm — cơ chế khoá dòng (SELECT ... FOR UPDATE) hoạt động chính xác."
+                description="Không có trường hợp nào tồn kho khả dụng bị âm — hệ thống xử lý tuần tự và chính xác dù nhiều đơn đến cùng lúc."
               />
             )}
           </Card>

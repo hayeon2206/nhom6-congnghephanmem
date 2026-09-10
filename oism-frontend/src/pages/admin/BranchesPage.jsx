@@ -40,7 +40,7 @@ export default function BranchesPage() {
     { title: 'SĐT', dataIndex: 'phone' },
     { title: 'Kho tổng', dataIndex: 'isWarehouse', render: (v) => v && <Tag color="blue">Kho tổng</Tag> },
     {
-      title: 'Hiển thị (FR-AUTH-04)',
+      title: 'Hiển thị',
       dataIndex: 'isActive',
       render: (v, record) => <Switch checked={v} onChange={() => onToggle(record.id)} />,
     },

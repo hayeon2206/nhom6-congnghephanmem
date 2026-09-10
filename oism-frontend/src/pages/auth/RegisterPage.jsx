@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Form, Input, Typography, message, Alert } from 'antd';
+import { Button, Form, Input, Typography, message, Alert, Space } from 'antd';
+import { ArrowRightOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
+import AuthBrandPanel from './AuthBrandPanel';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -24,42 +26,48 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#1d4ed8,#0ea5e9)' }}>
-      <Card style={{ width: 440, borderRadius: 16 }}>
-        <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 4 }}>
-          Tạo cửa hàng mới
-        </Typography.Title>
-        <Typography.Paragraph type="secondary" style={{ textAlign: 'center' }}>
-          FR-AUTH-01: mỗi cửa hàng là một tenant độc lập, dữ liệu tách biệt hoàn toàn.
-        </Typography.Paragraph>
+    <div style={{ minHeight: '100vh', display: 'flex' }}>
+      <AuthBrandPanel />
 
-        {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--color-bg)' }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+          <Typography.Title level={3} style={{ marginBottom: 4 }}>
+            Tạo cửa hàng mới
+          </Typography.Title>
+          <Typography.Paragraph type="secondary">
+            Dữ liệu của cửa hàng bạn hoàn toàn tách biệt với các cửa hàng khác trên hệ thống.
+          </Typography.Paragraph>
 
-        <Form layout="vertical" onFinish={onFinish}>
-          <Form.Item name="tenantName" label="Tên cửa hàng" rules={[{ required: true }]}>
-            <Input placeholder="VD: Thời trang ABC" size="large" />
-          </Form.Item>
-          <Form.Item name="ownerName" label="Họ tên chủ cửa hàng" rules={[{ required: true }]}>
-            <Input size="large" />
-          </Form.Item>
-          <Form.Item name="email" label="Email đăng nhập" rules={[{ required: true, type: 'email' }]}>
-            <Input size="large" />
-          </Form.Item>
-          <Form.Item name="phone" label="Số điện thoại">
-            <Input size="large" />
-          </Form.Item>
-          <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 6, message: 'Tối thiểu 6 ký tự' }]}>
-            <Input.Password size="large" />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" block size="large" loading={loading}>
-            Tạo cửa hàng
-          </Button>
-        </Form>
+          {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
 
-        <Typography.Paragraph style={{ textAlign: 'center', marginTop: 16 }}>
-          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-        </Typography.Paragraph>
-      </Card>
+          <Form layout="vertical" onFinish={onFinish}>
+            <Form.Item name="tenantName" label="Tên cửa hàng" rules={[{ required: true }]}>
+              <Input placeholder="VD: Thời trang ABC" size="large" />
+            </Form.Item>
+            <Space.Compact block>
+              <Form.Item name="ownerName" label="Họ tên chủ cửa hàng" rules={[{ required: true }]} style={{ width: '55%' }}>
+                <Input size="large" />
+              </Form.Item>
+              <Form.Item name="phone" label="Số điện thoại" style={{ width: '45%' }}>
+                <Input size="large" />
+              </Form.Item>
+            </Space.Compact>
+            <Form.Item name="email" label="Email đăng nhập" rules={[{ required: true, type: 'email' }]}>
+              <Input size="large" />
+            </Form.Item>
+            <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 6, message: 'Tối thiểu 6 ký tự' }]}>
+              <Input.Password size="large" />
+            </Form.Item>
+            <Button type="primary" htmlType="submit" block size="large" loading={loading} icon={<ArrowRightOutlined />} iconPosition="end">
+              Tạo cửa hàng
+            </Button>
+          </Form>
+
+          <Typography.Paragraph style={{ textAlign: 'center', marginTop: 20 }}>
+            Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+          </Typography.Paragraph>
+        </div>
+      </div>
     </div>
   );
 }

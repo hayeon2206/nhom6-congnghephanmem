@@ -16,10 +16,10 @@ export default function StockPage() {
   const columns = [
     { title: 'Sản phẩm', dataIndex: ['product', 'name'] },
     { title: 'SKU', dataIndex: ['product', 'skuCode'] },
-    { title: 'Tồn thực tế (OnHand)', dataIndex: 'onHand', align: 'right' },
-    { title: 'Đang giữ chỗ (Reserved)', dataIndex: 'reserved', align: 'right' },
+    { title: 'Tồn thực tế', dataIndex: 'onHand', align: 'right' },
+    { title: 'Đang giữ chỗ', dataIndex: 'reserved', align: 'right' },
     {
-      title: 'Khả dụng (Available)',
+      title: 'Khả dụng',
       align: 'right',
       render: (_, r) => {
         const available = r.onHand - r.reserved;

@@ -39,7 +39,7 @@ export default function UsersPage() {
     { title: 'Họ tên', dataIndex: 'name' },
     { title: 'Email', dataIndex: 'email' },
     { title: 'SĐT', dataIndex: 'phone' },
-    { title: 'Vai trò (FR-AUTH-03)', dataIndex: 'role', render: (v) => ROLE_TAG[v] },
+    { title: 'Vai trò', dataIndex: 'role', render: (v) => ROLE_TAG[v] },
     {
       title: 'Hoạt động',
       dataIndex: 'isActive',

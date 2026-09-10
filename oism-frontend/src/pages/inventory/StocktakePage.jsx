@@ -59,7 +59,7 @@ export default function StocktakePage() {
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Kiểm kê kho (FR-INV-04)</Typography.Title>
+        <Typography.Title level={3}>Kiểm kê kho</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setOpenModal(true)}>
           Mở phiên kiểm kê
         </Button>

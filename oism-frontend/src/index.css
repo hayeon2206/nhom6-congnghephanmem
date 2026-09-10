@@ -1,24 +1,203 @@
+/* ============================================================
+   OISM Design System — Navy/Slate + Blue accent
+   Data-dense dashboard style for an enterprise inventory & POS product.
+   Tokens are the single source of truth; components consume them via
+   CSS variables or the matching AntD theme tokens in App.jsx.
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --color-primary: #0f172a; /* navy — sidebar, headings, high-emphasis text */
+  --color-primary-foreground: #ffffff;
+  --color-accent: #0369a1; /* blue — primary actions, links, active states */
+  --color-accent-hover: #075985;
+  --color-accent-foreground: #ffffff;
+  --color-accent-soft: #e0f2fe; /* light blue fill for badges/highlights */
+
+  /* Surfaces */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+
+  /* Text */
+  --color-text: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
+
+  /* Semantic (separate from the brand accent — never reused for emphasis) */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #d97706;
+  --color-warning-soft: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fee2e2;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Spacing — dense scale for dashboard density */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-elevated: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
 * {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f5f7fa;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
 }
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-hover);
+}
+
+/* Numeric columns (money, quantity, SKU counters) get tabular figures so
+   digits line up in tables/cards instead of jittering as values change. */
+.num,
+.ant-statistic-content,
+.ant-table-cell[data-num='true'] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Shared page layout primitives ---------- */
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 16px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
 }
 
-.page-header h2 {
+.page-header h2,
+.page-header h3 {
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.page-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: 2px;
+}
+
+.page-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 14px;
   margin: 0;
 }
 
 .stat-card {
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+.surface-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* AntD component refinements to match the token system without fighting
+   its cascade specificity (kept minimal — theme tokens in App.jsx handle
+   colors; this layer only adjusts things the theme API can't reach). */
+
+.ant-layout-sider .ant-menu-dark {
+  background: transparent;
+}
+
+.ant-table-thead > tr > th {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary) !important;
+  background: var(--color-surface-muted) !important;
+}
+
+.ant-table-tbody > tr > td {
+  font-size: 14px;
+}
+
+.ant-card {
+  border-radius: var(--radius-lg);
+}
+
+.pos-result-item:hover {
+  background: var(--color-surface-muted);
+}
+
+/* Auth screens: brand panel only makes sense once there's room beside the form. */
+.auth-brand-panel {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .auth-brand-panel {
+    display: flex;
+  }
+}
+
+/* Respect reduced-motion preference across the app's transitions. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }

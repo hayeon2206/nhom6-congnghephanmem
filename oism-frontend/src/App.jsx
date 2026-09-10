@@ -3,6 +3,7 @@ import { ConfigProvider } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+import { antdTheme } from './theme';
 
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
@@ -22,7 +23,7 @@ import BranchesPage from './pages/admin/BranchesPage';
 
 function App() {
   return (
-    <ConfigProvider locale={viVN} theme={{ token: { colorPrimary: '#1d4ed8', borderRadius: 8 } }}>
+    <ConfigProvider locale={viVN} theme={antdTheme}>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

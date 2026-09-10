@@ -3,8 +3,7 @@ import { Table, Button, Modal, Form, Select, InputNumber, Space, Tag, message, T
 import { PlusOutlined, MinusCircleOutlined, CheckOutlined } from '@ant-design/icons';
 import { inventoryApi, productsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
-
-const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
+import { money } from '../../utils/format';
 
 export default function PurchaseReceiptsPage() {
   const { branches, selectedBranchId } = useUiStore();
@@ -68,7 +67,7 @@ export default function PurchaseReceiptsPage() {
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Phiếu nhập hàng (FR-INV-02)</Typography.Title>
+        <Typography.Title level={3}>Phiếu nhập hàng</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
           Tạo phiếu nhập
         </Button>

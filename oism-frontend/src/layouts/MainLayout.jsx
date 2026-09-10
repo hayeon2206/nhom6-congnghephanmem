@@ -14,6 +14,9 @@ import {
   BellOutlined,
   LogoutOutlined,
   UserOutlined,
+  ShoppingOutlined,
+  SendOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
@@ -24,12 +27,21 @@ const { Header, Sider, Content } = Layout;
 
 const ROLE_LABEL = { OWNER: 'Chủ cửa hàng', STAFF: 'Nhân viên', CASHIER: 'Thu ngân' };
 
+/** Icon shown per real-time event type — kept out of the message text itself
+ *  (emoji-as-icon doesn't scale with screen readers or icon theming). */
+const EVENT_ICON = {
+  order: <ShoppingOutlined style={{ color: 'var(--color-accent)' }} />,
+  webhook: <SendOutlined style={{ color: 'var(--color-accent)' }} />,
+  alert: <WarningOutlined style={{ color: 'var(--color-warning)' }} />,
+};
+
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
   const { branches, selectedBranchId, setBranches, setSelectedBranchId } = useUiStore();
   const [events, setEvents] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     branchesApi.list().then((data) => {
@@ -43,14 +55,16 @@ export default function MainLayout() {
     const socket = getSocket();
     if (!socket) return undefined;
 
-    const pushEvent = (title, description) => {
-      notification.open({ message: title, description, placement: 'topRight' });
-      setEvents((prev) => [{ title, description, time: new Date() }, ...prev].slice(0, 20));
+    const pushEvent = (type, title, description) => {
+      notification.open({ message: title, description, placement: 'topRight', icon: EVENT_ICON[type] });
+      setEvents((prev) => [{ type, title, description, time: new Date() }, ...prev].slice(0, 20));
+      setUnreadCount((n) => n + 1);
     };
 
-    const onNewOrder = (order) => pushEvent('🔔 Đơn hàng mới', `${order.channel} - ${order.externalOrderId}`);
-    const onWebhook = (data) => pushEvent('📦 Webhook đơn hàng', `Kênh ${data.channel} - ${data.reserved ? 'đã giữ hàng' : 'không đủ hàng, cần duyệt tay'}`);
-    const onStockAlert = (alerts) => pushEvent('⚠️ Cảnh báo tồn kho thấp', `${alerts.length} SKU cần nhập thêm hàng`);
+    const onNewOrder = (order) => pushEvent('order', 'Đơn hàng mới', `${order.channel} · ${order.externalOrderId}`);
+    const onWebhook = (data) =>
+      pushEvent('webhook', 'Webhook đơn hàng', `Kênh ${data.channel} — ${data.reserved ? 'đã giữ hàng' : 'không đủ hàng, cần duyệt tay'}`);
+    const onStockAlert = (alerts) => pushEvent('alert', 'Cảnh báo tồn kho thấp', `${alerts.length} SKU cần nhập thêm hàng`);
 
     socket.on('order:new', onNewOrder);
     socket.on('webhook:received', onWebhook);
@@ -117,9 +131,26 @@ export default function MainLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider breakpoint="lg" collapsedWidth="0" theme="dark" width={240}>
-        <div style={{ color: '#fff', fontWeight: 700, fontSize: 18, padding: '18px 20px' }}>
-          OISM<span style={{ color: '#52c41a' }}>•</span>
+      <Sider breakpoint="lg" collapsedWidth="0" theme="dark" width={248}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 22px 16px' }}>
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              background: 'var(--color-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 14,
+              flexShrink: 0,
+            }}
+          >
+            O
+          </div>
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>OISM</div>
         </div>
         <Menu
           theme="dark"
@@ -127,10 +158,21 @@ export default function MainLayout() {
           selectedKeys={[location.pathname]}
           defaultOpenKeys={['/inventory', '/admin']}
           items={menuItems}
+          style={{ borderInlineEnd: 'none' }}
         />
       </Sider>
       <Layout>
-        <Header style={{ background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>
+        <Header
+          style={{
+            background: 'var(--color-surface)',
+            borderBottom: '1px solid var(--color-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 24px',
+            height: 64,
+          }}
+        >
           <Select
             style={{ width: 260 }}
             value={selectedBranchId}
@@ -138,15 +180,16 @@ export default function MainLayout() {
             options={branches.map((b) => ({ value: b.id, label: b.name + (b.isActive ? '' : ' (ẩn)') }))}
             placeholder="Chọn chi nhánh"
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
             <Popover
               trigger="click"
               placement="bottomRight"
               title="Thông báo thời gian thực"
+              onOpenChange={(open) => open && setUnreadCount(0)}
               content={
-                <div style={{ width: 320, maxHeight: 360, overflowY: 'auto' }}>
+                <div style={{ width: 340, maxHeight: 380, overflowY: 'auto' }}>
                   {events.length === 0 ? (
-                    <Empty description="Chưa có thông báo" />
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có thông báo" />
                   ) : (
                     <List
                       size="small"
@@ -154,6 +197,7 @@ export default function MainLayout() {
                       renderItem={(item) => (
                         <List.Item>
                           <List.Item.Meta
+                            avatar={EVENT_ICON[item.type]}
                             title={item.title}
                             description={
                               <>
@@ -172,22 +216,22 @@ export default function MainLayout() {
                 </div>
               }
             >
-              <Badge count={events.length} size="small">
-                <BellOutlined style={{ fontSize: 20, cursor: 'pointer' }} />
+              <Badge count={unreadCount} size="small">
+                <BellOutlined style={{ fontSize: 18, cursor: 'pointer', color: 'var(--color-text-secondary)' }} />
               </Badge>
             </Popover>
             <Dropdown menu={userMenu} placement="bottomRight">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Avatar icon={<UserOutlined />} />
+                <Avatar icon={<UserOutlined />} style={{ background: 'var(--color-surface-muted)', color: 'var(--color-text-secondary)' }} />
                 <div style={{ lineHeight: 1.2 }}>
-                  <div>{user?.name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{user?.name}</div>
                   <Tag color="blue" style={{ marginTop: 2 }}>{ROLE_LABEL[user?.role] ?? user?.role}</Tag>
                 </div>
               </div>
             </Dropdown>
           </div>
         </Header>
-        <Content style={{ margin: 20 }}>
+        <Content style={{ margin: 24 }}>
           <Outlet />
         </Content>
       </Layout>

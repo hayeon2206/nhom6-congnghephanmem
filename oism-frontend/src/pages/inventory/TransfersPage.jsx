@@ -80,7 +80,7 @@ export default function TransfersPage() {
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Chuyển kho giữa các chi nhánh (FR-INV-03)</Typography.Title>
+        <Typography.Title level={3}>Chuyển kho giữa các chi nhánh</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
           Tạo phiếu chuyển kho
         </Button>

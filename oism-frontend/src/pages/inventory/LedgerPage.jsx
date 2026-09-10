@@ -37,7 +37,13 @@ export default function LedgerPage() {
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Sổ cái tồn kho (append-only)</Typography.Title>
+        <div>
+          <Typography.Title level={3}>Sổ cái tồn kho</Typography.Title>
+          <Typography.Paragraph type="secondary" style={{ marginBottom: 0 }}>
+            Lịch sử đầy đủ mọi biến động tồn kho. Không thể sửa hoặc xoá — mọi điều chỉnh đều tạo thêm một dòng bù trừ mới,
+            đảm bảo số liệu luôn có thể truy vết.
+          </Typography.Paragraph>
+        </div>
         <Select
           style={{ width: 240 }}
           allowClear
@@ -47,9 +53,6 @@ export default function LedgerPage() {
           options={branches.map((b) => ({ value: b.id, label: b.name }))}
         />
       </div>
-      <Typography.Paragraph type="secondary">
-        NFR-SEC-03: bảng này chỉ ghi thêm (append-only), không cho phép sửa/xoá — mọi điều chỉnh đều tạo bút toán bù trừ mới.
-      </Typography.Paragraph>
       <Table rowKey="id" columns={columns} dataSource={data.items} loading={loading} pagination={{ pageSize: 20 }} />
     </div>
   );

@@ -3,8 +3,7 @@ import { Row, Col, Card, Input, List, Button, InputNumber, Empty, Typography, Ra
 import { DeleteOutlined, SearchOutlined, PrinterOutlined } from '@ant-design/icons';
 import { posApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
-
-const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
+import { money } from '../../utils/format';
 
 /** FR-POS-01/02/03/04: fast search, live stock guard, cash/QR checkout, single-transaction Reserve->Confirm->Complete. */
 export default function PosPage() {
@@ -62,7 +61,20 @@ export default function PosPage() {
   };
 
   const updateQty = (productId, quantity) => {
-    setCart((prev) => prev.map((l) => (l.product.id === productId ? { ...l, quantity } : l)));
+    setCart((prev) =>
+      prev.map((l) => {
+        if (l.product.id !== productId) return l;
+        const requested = Math.max(1, Math.floor(quantity || 1));
+        if (requested > l.product.available) {
+          message.warning(
+            `${l.product.name} chỉ còn ${l.product.available} sản phẩm khả dụng trong kho — đã điều chỉnh số lượng về ${l.product.available}.`,
+            4,
+          );
+          return { ...l, quantity: l.product.available };
+        }
+        return { ...l, quantity: requested };
+      }),
+    );
   };
 
   const removeLine = (productId) => setCart((prev) => prev.filter((l) => l.product.id !== productId));
@@ -141,12 +153,19 @@ export default function PosPage() {
                   <Button key="del" danger type="text" icon={<DeleteOutlined />} onClick={() => removeLine(line.product.id)} />,
                 ]}
               >
-                <List.Item.Meta title={line.product.name} description={money(line.product.sellingPrice)} />
+                <List.Item.Meta
+                  title={line.product.name}
+                  description={`${money(line.product.sellingPrice)} · Tối đa ${line.product.available}`}
+                />
+                {/* No `max` prop here on purpose: AntD silently clamps out-of-range typed
+                    values on blur without telling the cashier, so a typed "9999" against
+                    3 available would look accepted until the total quietly stayed small.
+                    updateQty() does the clamping itself and surfaces a warning so the
+                    cashier always knows when — and why — a quantity was corrected. */}
                 <InputNumber
                   min={1}
-                  max={line.product.available}
                   value={line.quantity}
-                  onChange={(v) => updateQty(line.product.id, v || 1)}
+                  onChange={(v) => updateQty(line.product.id, v ?? 1)}
                 />
               </List.Item>
             )}

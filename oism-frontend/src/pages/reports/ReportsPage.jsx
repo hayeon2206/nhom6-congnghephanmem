@@ -3,9 +3,9 @@ import { Tabs, Typography, Row, Col, Card, Statistic, DatePicker, Select, Space,
 import dayjs from 'dayjs';
 import { reportsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
+import { money } from '../../utils/format';
 
 const { RangePicker } = DatePicker;
-const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
 
 function RevenueTab() {
   const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
@@ -34,18 +34,18 @@ function RevenueTab() {
         />
       </Space>
 
-      <Row gutter={16}>
-        <Col span={6}>
-          <Card><Statistic title="Doanh thu thuần" value={money(report?.totalRevenue)} /></Card>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="stat-card"><Statistic title="Doanh thu thuần" value={money(report?.totalRevenue)} /></Card>
         </Col>
-        <Col span={6}>
-          <Card><Statistic title="Tổng giá vốn (COGS)" value={money(report?.totalCostOfGoodsSold)} /></Card>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="stat-card"><Statistic title="Tổng giá vốn hàng bán" value={money(report?.totalCostOfGoodsSold)} /></Card>
         </Col>
-        <Col span={6}>
-          <Card><Statistic title="Lợi nhuận gộp" value={money(report?.grossProfit)} valueStyle={{ color: '#3f8600' }} /></Card>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="stat-card"><Statistic title="Lợi nhuận gộp" value={money(report?.grossProfit)} valueStyle={{ color: 'var(--color-success)' }} /></Card>
         </Col>
-        <Col span={6}>
-          <Card><Statistic title="Biên lợi nhuận" value={`${report?.grossMarginPercent ?? 0}%`} /></Card>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="stat-card"><Statistic title="Biên lợi nhuận" value={`${report?.grossMarginPercent ?? 0}%`} /></Card>
         </Col>
       </Row>
 
@@ -86,13 +86,13 @@ function VelocityTab() {
         options={branches.map((b) => ({ value: b.id, label: b.name }))}
       />
 
-      <Card>
+      <Card className="stat-card">
         <Statistic title="Tổng giá trị tồn kho (theo giá vốn)" value={money(report?.totalInventoryValue)} />
       </Card>
 
-      <Row gutter={16} style={{ marginTop: 16 }}>
-        <Col span={12}>
-          <Card title="Bán chạy nhất (Best sellers)">
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col xs={24} lg={12}>
+          <Card title="Bán chạy nhất">
             <Table
               size="small"
               rowKey="productId"
@@ -105,8 +105,8 @@ function VelocityTab() {
             />
           </Card>
         </Col>
-        <Col span={12}>
-          <Card title="Bán chậm (Slow movers)">
+        <Col xs={24} lg={12}>
+          <Card title="Bán chậm">
             <Table
               size="small"
               rowKey="productId"
@@ -166,9 +166,9 @@ export default function ReportsPage() {
       </div>
       <Tabs
         items={[
-          { key: 'revenue', label: 'Doanh thu & Lợi nhuận (FR-REP-01)', children: <RevenueTab /> },
-          { key: 'velocity', label: 'Tồn kho & Vòng quay (FR-REP-02)', children: <VelocityTab /> },
-          { key: 'alerts', label: 'Cảnh báo tồn kho (FR-REP-03)', children: <StockAlertsTab /> },
+          { key: 'revenue', label: 'Doanh thu & Lợi nhuận', children: <RevenueTab /> },
+          { key: 'velocity', label: 'Tồn kho & Vòng quay', children: <VelocityTab /> },
+          { key: 'alerts', label: 'Cảnh báo tồn kho', children: <StockAlertsTab /> },
         ]}
       />
     </div>

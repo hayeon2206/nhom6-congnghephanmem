@@ -4,6 +4,7 @@ import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ordersApi, productsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
+import { money } from '../../utils/format';
 
 const STATE_TAG = {
   DRAFT: <Tag>Nháp</Tag>,
@@ -12,8 +13,6 @@ const STATE_TAG = {
   COMPLETED: <Tag color="green">Hoàn tất</Tag>,
   CANCELLED: <Tag color="red">Đã huỷ</Tag>,
 };
-
-const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
 
 export default function OrdersPage() {
   const { branches, selectedBranchId } = useUiStore();
@@ -66,7 +65,7 @@ export default function OrdersPage() {
     { title: 'Trạng thái', dataIndex: 'state', render: (v) => STATE_TAG[v] },
     { title: 'Tạo lúc', dataIndex: 'createdAt', render: (v) => dayjs(v).format('HH:mm DD/MM') },
     {
-      title: 'Thao tác (FR-ORD-03)',
+      title: 'Thao tác',
       render: (_, r) => (
         <Space>
           {r.state === 'DRAFT' && (
@@ -97,7 +96,7 @@ export default function OrdersPage() {
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Trung tâm đơn hàng (Order Hub)</Typography.Title>
+        <Typography.Title level={3}>Trung tâm đơn hàng</Typography.Title>
         <Space>
           <Select
             style={{ width: 200 }}
@@ -115,7 +114,7 @@ export default function OrdersPage() {
 
       <Table rowKey="id" columns={columns} dataSource={data.items} loading={loading} pagination={{ pageSize: 20 }} />
 
-      <Modal open={modalOpen} title="Tạo đơn hàng thủ công (Admin)" width={640} onCancel={() => setModalOpen(false)} onOk={onCreate} okText="Tạo đơn">
+      <Modal open={modalOpen} title="Tạo đơn hàng thủ công" width={640} onCancel={() => setModalOpen(false)} onOk={onCreate} okText="Tạo đơn">
         <Form layout="vertical" form={form} initialValues={{ branchId: selectedBranchId, items: [{}] }}>
           <Form.Item name="branchId" label="Chi nhánh" rules={[{ required: true }]}>
             <Select options={branches.map((b) => ({ value: b.id, label: b.name }))} />

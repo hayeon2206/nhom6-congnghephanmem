@@ -1,11 +1,56 @@
 import { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Typography, List, Tag, Spin } from 'antd';
-import { DollarOutlined, RiseOutlined, WarningOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { Row, Col, Card, Typography, List, Tag, Spin, Empty } from 'antd';
+import {
+  WalletOutlined,
+  RiseOutlined,
+  ShoppingCartOutlined,
+  WarningOutlined,
+  ArrowRightOutlined,
+} from '@ant-design/icons';
+import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { reportsApi, ordersApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
+import { money } from '../../utils/format';
 
-const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
+function StatCard({ icon, tone, label, value, hint }) {
+  const tones = {
+    accent: { bg: 'var(--color-accent-soft)', fg: 'var(--color-accent)' },
+    success: { bg: 'var(--color-success-soft)', fg: 'var(--color-success)' },
+    warning: { bg: 'var(--color-warning-soft)', fg: 'var(--color-warning)' },
+    danger: { bg: 'var(--color-danger-soft)', fg: 'var(--color-danger)' },
+  }[tone];
+
+  return (
+    <Card className="stat-card" bodyStyle={{ padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ color: 'var(--color-text-secondary)', fontSize: 13, fontWeight: 500 }}>{label}</div>
+          <div className="num" style={{ fontSize: 26, fontWeight: 700, color: 'var(--color-text)', marginTop: 6, letterSpacing: '-0.01em' }}>
+            {value}
+          </div>
+          {hint && <div style={{ color: 'var(--color-text-tertiary)', fontSize: 12, marginTop: 4 }}>{hint}</div>}
+        </div>
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: tones.bg,
+            color: tones.fg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 18,
+            flexShrink: 0,
+          }}
+        >
+          {icon}
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export default function DashboardPage() {
   const { selectedBranchId } = useUiStore();
@@ -31,43 +76,56 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [selectedBranchId]);
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '80px auto' }} />;
+  if (loading) return <Spin size="large" style={{ display: 'block', margin: '96px auto' }} />;
 
   return (
     <div>
       <div className="page-header">
-        <Typography.Title level={3}>Tổng quan hôm nay</Typography.Title>
+        <div>
+          <div className="page-eyebrow">{dayjs().format('dddd, DD/MM/YYYY')}</div>
+          <Typography.Title level={3}>Tổng quan</Typography.Title>
+        </div>
       </div>
 
-      <Row gutter={16}>
+      <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card">
-            <Statistic title="Doanh thu hôm nay" value={money(revenue?.totalRevenue)} prefix={<DollarOutlined />} />
-          </Card>
+          <StatCard icon={<WalletOutlined />} tone="accent" label="Doanh thu hôm nay" value={money(revenue?.totalRevenue)} />
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card">
-            <Statistic title="Lợi nhuận gộp" value={money(revenue?.grossProfit)} prefix={<RiseOutlined />} valueStyle={{ color: '#3f8600' }} />
-          </Card>
+          <StatCard
+            icon={<RiseOutlined />}
+            tone="success"
+            label="Lợi nhuận gộp"
+            value={money(revenue?.grossProfit)}
+            hint={revenue?.grossMarginPercent != null ? `Biên lợi nhuận ${revenue.grossMarginPercent}%` : undefined}
+          />
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card">
-            <Statistic title="Đơn chờ xử lý" value={pendingOrders.length} prefix={<ShoppingOutlined />} />
-          </Card>
+          <StatCard icon={<ShoppingCartOutlined />} tone="accent" label="Đơn chờ xử lý" value={pendingOrders.length} />
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card className="stat-card">
-            <Statistic title="Cảnh báo tồn kho thấp" value={alerts.length} prefix={<WarningOutlined />} valueStyle={{ color: alerts.length ? '#cf1322' : undefined }} />
-          </Card>
+          <StatCard
+            icon={<WarningOutlined />}
+            tone={alerts.length ? 'danger' : 'success'}
+            label="Cảnh báo tồn kho thấp"
+            value={alerts.length}
+          />
         </Col>
       </Row>
 
-      <Row gutter={16} style={{ marginTop: 20 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="Đơn hàng đang giữ chỗ (Reserved) cần duyệt">
+          <Card
+            title="Đơn hàng đang giữ chỗ cần duyệt"
+            extra={
+              <Link to="/orders" style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                Xem tất cả <ArrowRightOutlined style={{ fontSize: 11 }} />
+              </Link>
+            }
+          >
             <List
               dataSource={pendingOrders}
-              locale={{ emptyText: 'Không có đơn nào đang chờ' }}
+              locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có đơn nào đang chờ" /> }}
               renderItem={(o) => (
                 <List.Item>
                   <List.Item.Meta
@@ -81,10 +139,17 @@ export default function DashboardPage() {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="SKU cần nhập thêm hàng (FR-REP-03)">
+          <Card
+            title="SKU cần nhập thêm hàng"
+            extra={
+              <Link to="/reports" style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                Xem báo cáo <ArrowRightOutlined style={{ fontSize: 11 }} />
+              </Link>
+            }
+          >
             <List
               dataSource={alerts.slice(0, 8)}
-              locale={{ emptyText: 'Tồn kho đang ổn định' }}
+              locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tồn kho đang ổn định" /> }}
               renderItem={(a) => (
                 <List.Item>
                   <List.Item.Meta title={`${a.productName} (${a.skuCode})`} description={a.branchName} />

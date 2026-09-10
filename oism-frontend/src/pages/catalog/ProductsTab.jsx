@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, Space, Tag, message, Typography } from 'antd';
 import { PlusOutlined, BarcodeOutlined } from '@ant-design/icons';
 import { productsApi, categoriesApi, brandsApi } from '../../api/resources';
-
-const money = (v) => Number(v ?? 0).toLocaleString('vi-VN') + ' đ';
+import { money } from '../../utils/format';
 
 export default function ProductsTab() {
   const [data, setData] = useState({ items: [], total: 0 });
@@ -103,7 +102,7 @@ export default function ProductsTab() {
             <Input />
           </Form.Item>
           <Typography.Paragraph type="secondary" style={{ marginTop: -12 }}>
-            Để trống SKU / mã vạch để hệ thống tự sinh (FR-PROD-02/03).
+            Để trống SKU / mã vạch để hệ thống tự sinh.
           </Typography.Paragraph>
           <Space.Compact style={{ width: '100%' }}>
             <Form.Item name="skuCode" label="Mã SKU" style={{ width: '50%' }}>
