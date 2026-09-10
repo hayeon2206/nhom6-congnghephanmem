@@ -1,3 +1,8 @@
+# Tên project được ghim cố định. Nếu không ghim, Docker lấy tên project theo tên
+# thư mục chứa file này — đổi tên thư mục là container/volume đổi theo, và dữ liệu
+# trong database cũ coi như "biến mất" vì compose trỏ sang volume mới.
+name: oism
+
 services:
   db:
     image: postgres:16-alpine
