@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Select, Space, Tag, Switch, message, Typography } from 'antd';
+import { App, Table, Button, Modal, Form, Input, Select, Space, Tag, Switch, Typography } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { usersApi } from '../../api/resources';
 
@@ -10,6 +10,7 @@ const ROLE_TAG = {
 };
 
 export default function UsersPage() {
+  const { message } = App.useApp();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -17,22 +18,39 @@ export default function UsersPage() {
 
   const load = () => {
     setLoading(true);
-    usersApi.list().then(setItems).finally(() => setLoading(false));
+    usersApi
+      .list()
+      .then(setItems)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách nhân viên.'))
+      .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
   const onCreate = async () => {
-    const values = await form.validateFields();
-    await usersApi.create(values);
-    message.success('Đã thêm nhân viên.');
-    setModalOpen(false);
-    form.resetFields();
-    load();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
+    try {
+      await usersApi.create(values);
+      message.success('Đã thêm nhân viên.');
+      setModalOpen(false);
+      form.resetFields();
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const toggleActive = async (record) => {
-    await usersApi.update(record.id, { isActive: !record.isActive });
-    load();
+    try {
+      await usersApi.update(record.id, { isActive: !record.isActive });
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const columns = [

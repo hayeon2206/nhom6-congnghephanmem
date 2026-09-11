@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Row, Col, Card, Input, List, Button, InputNumber, Empty, Typography, Radio, message, Tag, Divider, Modal } from 'antd';
-import { DeleteOutlined, SearchOutlined, PrinterOutlined } from '@ant-design/icons';
+import { App, Row, Col, Card, Input, List, Button, InputNumber, Typography, Radio, Tag, Divider, Modal } from 'antd';
+import { DeleteOutlined, SearchOutlined, PrinterOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { posApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
-import { money } from '../../utils/format';
+import { money, resolveImageUrl } from '../../utils/format';
+import BrandEmpty from '../../components/BrandEmpty';
 
 /** FR-POS-01/02/03/04: fast search, live stock guard, cash/QR checkout, single-transaction Reserve->Confirm->Complete. */
 export default function PosPage() {
+  const { message } = App.useApp();
   const { selectedBranchId } = useUiStore();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -20,25 +22,42 @@ export default function PosPage() {
     inputRef.current?.focus();
   }, []);
 
+  // With no query, this doubles as a "recommended products" grid — every
+  // active product at the branch, image and price included — so a cashier
+  // can browse instead of only being able to type. Typed search (below)
+  // filters the exact same list; nothing about the search logic itself changes.
+  useEffect(() => {
+    runSearch('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranchId]);
+
   const runSearch = async (q) => {
-    if (!q || !selectedBranchId) {
+    if (!selectedBranchId) {
       setResults([]);
       return;
     }
-    const data = await posApi.lookup(selectedBranchId, q);
-    setResults(data);
+    try {
+      const data = await posApi.lookup(selectedBranchId, q ?? '');
+      setResults(data);
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Không tải được danh sách sản phẩm.');
+    }
   };
 
   // FR-POS-01: barcode scanner + Enter behaves as "scan and add to cart" in one motion.
   const onSearchSubmit = async () => {
     if (!query || !selectedBranchId) return;
-    const data = await posApi.lookup(selectedBranchId, query);
-    if (data.length === 1) {
-      addToCart(data[0]);
-      setQuery('');
-      setResults([]);
-    } else {
-      setResults(data);
+    try {
+      const data = await posApi.lookup(selectedBranchId, query);
+      if (data.length === 1) {
+        addToCart(data[0]);
+        setQuery('');
+        runSearch('');
+      } else {
+        setResults(data);
+      }
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Tìm kiếm thất bại.');
     }
   };
 
@@ -103,7 +122,7 @@ export default function PosPage() {
   return (
     <Row gutter={16} style={{ height: 'calc(100vh - 130px)' }}>
       <Col xs={24} lg={14} style={{ height: '100%' }}>
-        <Card style={{ height: '100%' }} bodyStyle={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Card style={{ height: '100%' }} styles={{ body: { height: '100%', display: 'flex', flexDirection: 'column' } }}>
           <Input
             ref={inputRef}
             size="large"
@@ -117,24 +136,35 @@ export default function PosPage() {
             }}
             onPressEnter={onSearchSubmit}
           />
+          {!query && results.length > 0 && <div className="section-title" style={{ marginTop: 12 }}>Gợi ý sản phẩm</div>}
           <List
-            style={{ marginTop: 12, flex: 1, overflowY: 'auto' }}
+            style={{ marginTop: query ? 12 : 4, flex: 1, overflowY: 'auto' }}
+            grid={{ gutter: 12, xs: 2, sm: 2, md: 3, lg: 3, xl: 4 }}
             dataSource={results}
-            locale={{ emptyText: <Empty description="Nhập từ khoá để tìm sản phẩm" /> }}
+            locale={{ emptyText: <BrandEmpty description="Chưa có sản phẩm nào để gợi ý" /> }}
             renderItem={(p) => (
-              <List.Item
-                onClick={() => addToCart(p)}
-                style={{ cursor: 'pointer', padding: '10px 12px', borderRadius: 8 }}
-                className="pos-result-item"
-              >
-                <List.Item.Meta
-                  title={p.name}
-                  description={`SKU: ${p.skuCode}${p.barcode ? ' · Mã vạch: ' + p.barcode : ''}`}
-                />
-                <div style={{ textAlign: 'right' }}>
-                  <div>{money(p.sellingPrice)}</div>
-                  <Tag color={p.available > 0 ? 'green' : 'red'}>Khả dụng: {p.available}</Tag>
-                </div>
+              <List.Item>
+                <Card
+                  hoverable
+                  size="small"
+                  className="pos-result-card"
+                  onClick={() => addToCart(p)}
+                  cover={
+                    p.imageUrl ? (
+                      <img src={resolveImageUrl(p.imageUrl)} alt={p.name} className="pos-result-cover" />
+                    ) : (
+                      <div className="pos-result-cover pos-result-cover-placeholder">
+                        <ShoppingOutlined />
+                      </div>
+                    )
+                  }
+                >
+                  <Card.Meta title={p.name} description={`SKU: ${p.skuCode}`} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                    <span className="num" style={{ fontWeight: 600 }}>{money(p.sellingPrice)}</span>
+                    <Tag color={p.available > 0 ? 'green' : 'red'}>Còn {p.available}</Tag>
+                  </div>
+                </Card>
               </List.Item>
             )}
           />
@@ -142,11 +172,11 @@ export default function PosPage() {
       </Col>
 
       <Col xs={24} lg={10} style={{ height: '100%' }}>
-        <Card title="Giỏ hàng" style={{ height: '100%' }} bodyStyle={{ display: 'flex', flexDirection: 'column', height: 'calc(100% - 58px)' }}>
+        <Card title="Giỏ hàng" style={{ height: '100%' }} styles={{ body: { display: 'flex', flexDirection: 'column', height: 'calc(100% - 58px)' } }}>
           <List
             style={{ flex: 1, overflowY: 'auto' }}
             dataSource={cart}
-            locale={{ emptyText: <Empty description="Chưa có sản phẩm nào" /> }}
+            locale={{ emptyText: <BrandEmpty description="Chưa có sản phẩm nào" /> }}
             renderItem={(line) => (
               <List.Item
                 actions={[

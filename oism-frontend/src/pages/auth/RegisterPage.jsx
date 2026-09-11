@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Form, Input, Typography, message, Alert, Space } from 'antd';
-import { ArrowRightOutlined } from '@ant-design/icons';
+import { App, Button, Form, Input, Typography, Alert, Space } from 'antd';
 import { useAuthStore } from '../../store/authStore';
 import AuthBrandPanel from './AuthBrandPanel';
+import whaleHero from '../../assets/whale-hero.png';
 
 export default function RegisterPage() {
+  const { message } = App.useApp();
   const navigate = useNavigate();
   const registerTenant = useAuthStore((s) => s.registerTenant);
   const [loading, setLoading] = useState(false);
@@ -29,11 +30,10 @@ export default function RegisterPage() {
     <div style={{ minHeight: '100vh', display: 'flex' }}>
       <AuthBrandPanel />
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--color-bg)' }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
-          <Typography.Title level={3} style={{ marginBottom: 4 }}>
-            Tạo cửa hàng mới
-          </Typography.Title>
+      <div className="auth-form-panel">
+        <img src={whaleHero} alt="" className="auth-form-watermark" aria-hidden="true" />
+        <div className="auth-form-card" style={{ maxWidth: 560 }}>
+          <h1 className="auth-form-title">Tạo cửa hàng mới</h1>
           <Typography.Paragraph type="secondary">
             Dữ liệu của cửa hàng bạn hoàn toàn tách biệt với các cửa hàng khác trên hệ thống.
           </Typography.Paragraph>
@@ -58,7 +58,7 @@ export default function RegisterPage() {
             <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 6, message: 'Tối thiểu 6 ký tự' }]}>
               <Input.Password size="large" />
             </Form.Item>
-            <Button type="primary" htmlType="submit" block size="large" loading={loading} icon={<ArrowRightOutlined />} iconPosition="end">
+            <Button type="primary" htmlType="submit" block size="large" loading={loading}>
               Tạo cửa hàng
             </Button>
           </Form>

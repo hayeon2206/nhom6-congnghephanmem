@@ -1,60 +1,56 @@
-import { CheckCircleFilled } from '@ant-design/icons';
+import { useState } from 'react';
+import VantaWaves from '../../components/VantaWaves';
+import Typewriter from '../../components/Typewriter';
+import FlipWord from '../../components/FlipWord';
 
-const POINTS = [
-  'Sổ cái tồn kho theo thời gian thực, không thể sửa/xoá',
-  'Chặn bán vượt tồn kho khi nhiều kênh bán cùng lúc',
-  'Đồng bộ đơn hàng từ POS, Shopee, TikTok, Lazada vào một nơi',
+const STATS = [
+  { value: '3+', label: 'Kênh bán hợp nhất', hint: 'POS · Shopee · TikTok' },
+  { value: '100%', label: 'Chặn bán vượt tồn', hint: 'Khi nhiều đơn cùng lúc' },
+  { value: '24/7', label: 'Theo dõi thời gian thực', hint: 'Tồn kho & đơn hàng' },
 ];
 
-/** Shared left-hand brand panel for the auth screens — hidden on narrow viewports via .auth-brand-panel in index.css. */
+/**
+ * Shared left-hand brand panel for the auth screens — hidden on narrow
+ * viewports via .auth-brand-panel in index.css. The intro plays once per
+ * mount: eyebrow types in, then the wordmark, then the tagline, and only
+ * once the tagline is fully typed does the flip word take its turn. The
+ * animated sea (VantaWaves) is the panel's whole visual — no illustration
+ * layered on top of it.
+ */
 export default function AuthBrandPanel() {
+  const [stage, setStage] = useState('eyebrow');
+
   return (
-    <div
-      className="auth-brand-panel"
-      style={{
-        width: 440,
-        background: 'var(--color-primary)',
-        color: '#fff',
-        padding: '56px 48px',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-      }}
-    >
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 48 }}>
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 9,
-              background: 'var(--color-accent)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 16,
-            }}
-          >
-            O
-          </div>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>OISM</div>
+    <div className="auth-brand-panel">
+      <VantaWaves className="auth-panel-waves" />
+
+      <div className="auth-brand-top">
+        <div className="auth-brand-eyebrow">
+          <Typewriter text="Hệ thống quản lý" speed={22} onDone={() => setStage('title')} />
         </div>
-
-        <h1 style={{ fontSize: 30, fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.01em', margin: 0 }}>
-          Quản lý bán hàng &amp; tồn kho đa kênh cho doanh nghiệp bán lẻ.
+        <h1 className="auth-brand-title">
+          {stage !== 'eyebrow' && <Typewriter text="OISM" speed={90} startDelay={120} onDone={() => setStage('slogan')} />}
         </h1>
-
-        <div style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {POINTS.map((p) => (
-            <div key={p} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <CheckCircleFilled style={{ color: 'var(--color-accent)', marginTop: 3, flexShrink: 0 }} />
-              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 14, lineHeight: 1.6 }}>{p}</span>
-            </div>
-          ))}
+        <div className="auth-brand-rule" />
+        <div className="auth-brand-slogan">
+          {(stage === 'slogan' || stage === 'done') && (
+            <Typewriter text="Sáng tạo - Hiệu quả - " speed={28} onDone={() => setStage('done')} />
+          )}
+          {stage === 'done' && <FlipWord from="Tin cậy" to="Cà đùng" delay={2200} />}
         </div>
       </div>
 
-      <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>© {new Date().getFullYear()} OISM</div>
+      <div className="auth-brand-spacer" />
+
+      <div className="auth-brand-stats">
+        {STATS.map((s) => (
+          <div key={s.label} className="auth-brand-stat">
+            <div className="auth-brand-stat-value">{s.value}</div>
+            <div className="auth-brand-stat-label">{s.label}</div>
+            <div className="auth-brand-stat-hint">{s.hint}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

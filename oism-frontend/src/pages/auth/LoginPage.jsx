@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, Form, Input, Typography, message, Alert } from 'antd';
-import { LockOutlined, MailOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { App, Button, Form, Input, Typography, Alert } from 'antd';
+import { LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../store/authStore';
 import AuthBrandPanel from './AuthBrandPanel';
+import whaleHero from '../../assets/whale-hero.png';
 
 export default function LoginPage() {
+  const { message } = App.useApp();
   const navigate = useNavigate();
   const login = useAuthStore((s) => s.login);
   const [loading, setLoading] = useState(false);
@@ -29,11 +31,10 @@ export default function LoginPage() {
     <div style={{ minHeight: '100vh', display: 'flex' }}>
       <AuthBrandPanel />
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--color-bg)' }}>
-        <div style={{ width: '100%', maxWidth: 380 }}>
-          <Typography.Title level={3} style={{ marginBottom: 4 }}>
-            Đăng nhập
-          </Typography.Title>
+      <div className="auth-form-panel">
+        <img src={whaleHero} alt="" className="auth-form-watermark" aria-hidden="true" />
+        <div className="auth-form-card" style={{ maxWidth: 520 }}>
+          <h1 className="auth-form-title">Đăng nhập</h1>
           <Typography.Paragraph type="secondary">Vào hệ thống quản lý cửa hàng của bạn.</Typography.Paragraph>
 
           {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
@@ -45,7 +46,7 @@ export default function LoginPage() {
             <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}>
               <Input.Password prefix={<LockOutlined />} placeholder="••••••" size="large" />
             </Form.Item>
-            <Button type="primary" htmlType="submit" block size="large" loading={loading} icon={<ArrowRightOutlined />} iconPosition="end">
+            <Button type="primary" htmlType="submit" block size="large" loading={loading}>
               Đăng nhập
             </Button>
           </Form>

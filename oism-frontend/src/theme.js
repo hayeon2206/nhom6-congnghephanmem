@@ -5,12 +5,13 @@
  * by hand — update both together when the palette changes.
  */
 export const colors = {
-  primary: '#0f172a',
+  primary: '#0b1e33',
   primaryForeground: '#ffffff',
   accent: '#0369a1',
   accentHover: '#075985',
   accentForeground: '#ffffff',
   accentSoft: '#e0f2fe',
+  gold: '#d9b978',
   bg: '#f8fafc',
   surface: '#ffffff',
   surfaceMuted: '#f1f5f9',
@@ -25,6 +26,7 @@ export const colors = {
 };
 
 export const fontFamily = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+export const displayFontFamily = "'Fraunces', Georgia, 'Times New Roman', serif";
 
 export const antdTheme = {
   token: {

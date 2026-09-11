@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
-import { Layout, Menu, Select, Dropdown, Badge, Avatar, notification, Tag, List, Popover, Empty, Typography } from 'antd';
+import { App, Layout, Menu, Select, Dropdown, Badge, Avatar, Tag, List, Popover, Typography } from 'antd';
 import {
   DashboardOutlined,
   ShopOutlined,
@@ -22,6 +22,8 @@ import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import { branchesApi } from '../api/resources';
 import { getSocket } from '../api/socket';
+import WhaleIllustration from '../components/WhaleIllustration';
+import BrandEmpty from '../components/BrandEmpty';
 
 const { Header, Sider, Content } = Layout;
 
@@ -36,6 +38,7 @@ const EVENT_ICON = {
 };
 
 export default function MainLayout() {
+  const { notification } = App.useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
@@ -44,10 +47,18 @@ export default function MainLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    branchesApi.list().then((data) => {
-      setBranches(data);
-      if (!selectedBranchId && data.length > 0) setSelectedBranchId(data[0].id);
-    });
+    branchesApi
+      .list()
+      .then((data) => {
+        setBranches(data);
+        if (!selectedBranchId && data.length > 0) setSelectedBranchId(data[0].id);
+      })
+      .catch((err) =>
+        notification.error({
+          message: 'Không tải được danh sách chi nhánh.',
+          description: err.response?.data?.message,
+        }),
+      );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -143,12 +154,10 @@ export default function MainLayout() {
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
-              fontWeight: 800,
-              fontSize: 14,
               flexShrink: 0,
             }}
           >
-            O
+            <WhaleIllustration style={{ width: 17, height: 17 }} />
           </div>
           <div style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>OISM</div>
         </div>
@@ -189,7 +198,7 @@ export default function MainLayout() {
               content={
                 <div style={{ width: 340, maxHeight: 380, overflowY: 'auto' }}>
                   {events.length === 0 ? (
-                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có thông báo" />
+                    <BrandEmpty description="Chưa có thông báo" />
                   ) : (
                     <List
                       size="small"
@@ -232,7 +241,9 @@ export default function MainLayout() {
           </div>
         </Header>
         <Content style={{ margin: 24 }}>
-          <Outlet />
+          <div key={location.pathname} className="page-transition">
+            <Outlet />
+          </div>
         </Content>
       </Layout>
     </Layout>

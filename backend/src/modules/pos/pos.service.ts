@@ -29,6 +29,7 @@ export async function lookupProducts(tenantId: string, branchId: string, q: stri
       name: p.name,
       skuCode: p.skuCode,
       barcode: p.barcode,
+      imageUrl: p.imageUrl,
       sellingPrice: p.sellingPrice,
       available,
     };

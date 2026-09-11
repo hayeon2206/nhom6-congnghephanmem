@@ -1,8 +1,16 @@
 import { z } from 'zod';
 
+// Uploaded images are served back from our own /uploads static route as a
+// relative path (see uploads.routes.ts) — accept that, or a full http(s) URL
+// for anything set by other means.
+const imageUrlSchema = z.string().refine((v) => v.startsWith('/uploads/') || /^https?:\/\//.test(v), {
+  message: 'Đường dẫn ảnh không hợp lệ.',
+});
+
 export const createCategorySchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  imageUrl: imageUrlSchema.optional(),
   parentCategoryId: z.string().uuid().optional(),
 });
 export const updateCategorySchema = createCategorySchema.partial();
@@ -10,6 +18,7 @@ export const updateCategorySchema = createCategorySchema.partial();
 export const createBrandSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  imageUrl: imageUrlSchema.optional(),
 });
 export const updateBrandSchema = createBrandSchema.partial();
 
@@ -19,6 +28,7 @@ export const createProductSchema = z.object({
   barcode: z.string().optional(), // auto-generated when omitted
   categoryId: z.string().uuid().optional(),
   brandId: z.string().uuid().optional(),
+  imageUrl: imageUrlSchema.optional(),
   attributes: z.record(z.string()).optional(), // e.g. { color: "Do", size: "M" }
   costPrice: z.number().nonnegative().default(0),
   sellingPrice: z.number().nonnegative(),

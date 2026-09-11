@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
+import { MulterError } from 'multer';
 import { AppError } from '../domain/errors';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,6 +16,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
 
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ message: err.message });
+    return;
+  }
+
+  if (err instanceof MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File ảnh vượt quá dung lượng cho phép (5MB).' : 'Tải file lên thất bại.';
+    res.status(400).json({ message });
     return;
   }
 

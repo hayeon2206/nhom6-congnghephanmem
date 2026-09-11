@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Typography, Tag, Select } from 'antd';
+import { App, Table, Typography, Tag, Select } from 'antd';
 import dayjs from 'dayjs';
 import { inventoryApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
@@ -15,13 +15,18 @@ const TYPE_TAG = {
 };
 
 export default function LedgerPage() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
   const [data, setData] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    inventoryApi.ledger({ branchId: selectedBranchId, pageSize: 100 }).then(setData).finally(() => setLoading(false));
+    inventoryApi
+      .ledger({ branchId: selectedBranchId, pageSize: 100 })
+      .then(setData)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được sổ cái tồn kho.'))
+      .finally(() => setLoading(false));
   }, [selectedBranchId]);
 
   const columns = [

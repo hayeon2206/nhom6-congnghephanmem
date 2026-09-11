@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Tag, Space, Select, Typography, message, Modal, Form, InputNumber, Input } from 'antd';
+import { App, Table, Button, Tag, Space, Select, Typography, Modal, Form, InputNumber, Input } from 'antd';
 import { PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ordersApi, productsApi } from '../../api/resources';
@@ -15,6 +15,7 @@ const STATE_TAG = {
 };
 
 export default function OrdersPage() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId } = useUiStore();
   const [data, setData] = useState({ items: [] });
   const [stateFilter, setStateFilter] = useState();
@@ -25,12 +26,19 @@ export default function OrdersPage() {
 
   const load = () => {
     setLoading(true);
-    ordersApi.list({ state: stateFilter, pageSize: 100 }).then(setData).finally(() => setLoading(false));
+    ordersApi
+      .list({ state: stateFilter, pageSize: 100 })
+      .then(setData)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách đơn hàng.'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(load, [stateFilter]);
   useEffect(() => {
-    productsApi.search({ pageSize: 200 }).then((d) => setProducts(d.items));
+    productsApi
+      .search({ pageSize: 200 })
+      .then((d) => setProducts(d.items))
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách sản phẩm.'));
   }, []);
 
   const act = async (fn, id, okMsg) => {
@@ -44,12 +52,21 @@ export default function OrdersPage() {
   };
 
   const onCreate = async () => {
-    const values = await form.validateFields();
-    await ordersApi.create(values);
-    message.success('Đã tạo đơn hàng thủ công (Draft).');
-    setModalOpen(false);
-    form.resetFields();
-    load();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
+    try {
+      await ordersApi.create(values);
+      message.success('Đã tạo đơn hàng thủ công (Draft).');
+      setModalOpen(false);
+      form.resetFields();
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const columns = [

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, Space, Tag, message, Typography } from 'antd';
-import { PlusOutlined, BarcodeOutlined } from '@ant-design/icons';
+import { App, Table, Button, Modal, Form, Input, InputNumber, Select, Space, Tag, Typography, Avatar } from 'antd';
+import { PlusOutlined, BarcodeOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { productsApi, categoriesApi, brandsApi } from '../../api/resources';
-import { money } from '../../utils/format';
+import { money, resolveImageUrl } from '../../utils/format';
+import ImageUploadField from '../../components/ImageUploadField';
 
 export default function ProductsTab() {
+  const { message } = App.useApp();
   const [data, setData] = useState({ items: [], total: 0 });
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -15,13 +17,23 @@ export default function ProductsTab() {
 
   const load = () => {
     setLoading(true);
-    productsApi.search({ pageSize: 100 }).then(setData).finally(() => setLoading(false));
+    productsApi
+      .search({ pageSize: 100 })
+      .then(setData)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách sản phẩm.'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     load();
-    categoriesApi.list().then(setCategories);
-    brandsApi.list().then(setBrands);
+    categoriesApi
+      .list()
+      .then(setCategories)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách danh mục.'));
+    brandsApi
+      .list()
+      .then(setBrands)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách thương hiệu.'));
   }, []);
 
   const openCreate = () => {
@@ -38,6 +50,7 @@ export default function ProductsTab() {
       barcode: record.barcode,
       categoryId: record.categoryId,
       brandId: record.brandId,
+      imageUrl: record.imageUrl,
       sellingPrice: Number(record.sellingPrice),
       wholesalePrice: record.wholesalePrice ? Number(record.wholesalePrice) : undefined,
       reorderThreshold: record.reorderThreshold,
@@ -46,7 +59,12 @@ export default function ProductsTab() {
   };
 
   const onSubmit = async () => {
-    const values = await form.validateFields();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
     try {
       if (editing) {
         await productsApi.update(editing.id, values);
@@ -63,6 +81,12 @@ export default function ProductsTab() {
   };
 
   const columns = [
+    {
+      title: '',
+      dataIndex: 'imageUrl',
+      width: 56,
+      render: (url) => <Avatar shape="square" size={40} src={url ? resolveImageUrl(url) : undefined} icon={<ShoppingOutlined />} />,
+    },
     { title: 'Tên sản phẩm', dataIndex: 'name' },
     { title: 'SKU', dataIndex: 'skuCode' },
     { title: 'Mã vạch', dataIndex: 'barcode', render: (v) => v && <Tag icon={<BarcodeOutlined />}>{v}</Tag> },
@@ -98,6 +122,9 @@ export default function ProductsTab() {
         okText="Lưu"
       >
         <Form layout="vertical" form={form}>
+          <Form.Item name="imageUrl" label="Hình ảnh sản phẩm">
+            <ImageUploadField />
+          </Form.Item>
           <Form.Item name="name" label="Tên sản phẩm" rules={[{ required: true }]}>
             <Input />
           </Form.Item>

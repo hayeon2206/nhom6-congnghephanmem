@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Select, InputNumber, Space, Tag, message, Typography, Input, Popconfirm } from 'antd';
+import { App, Table, Button, Modal, Form, Select, InputNumber, Space, Tag, Typography, Input, Popconfirm } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, CheckOutlined } from '@ant-design/icons';
 import { inventoryApi, productsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
 import { money } from '../../utils/format';
 
 export default function PurchaseReceiptsPage() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId } = useUiStore();
   const [items, setItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -15,27 +16,47 @@ export default function PurchaseReceiptsPage() {
 
   const load = () => {
     setLoading(true);
-    inventoryApi.receipts.list().then(setItems).finally(() => setLoading(false));
+    inventoryApi.receipts
+      .list()
+      .then(setItems)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách phiếu nhập.'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     load();
-    productsApi.search({ pageSize: 200 }).then((d) => setProducts(d.items));
+    productsApi
+      .search({ pageSize: 200 })
+      .then((d) => setProducts(d.items))
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách sản phẩm.'));
   }, []);
 
   const onCreate = async () => {
-    const values = await form.validateFields();
-    await inventoryApi.receipts.create(values);
-    message.success('Đã tạo phiếu nhập (trạng thái nháp).');
-    setModalOpen(false);
-    form.resetFields();
-    load();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
+    try {
+      await inventoryApi.receipts.create(values);
+      message.success('Đã tạo phiếu nhập (trạng thái nháp).');
+      setModalOpen(false);
+      form.resetFields();
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const onConfirm = async (id) => {
-    await inventoryApi.receipts.confirm(id);
-    message.success('Đã xác nhận nhập kho — giá vốn bình quân gia quyền đã được cập nhật.');
-    load();
+    try {
+      await inventoryApi.receipts.confirm(id);
+      message.success('Đã xác nhận nhập kho — giá vốn bình quân gia quyền đã được cập nhật.');
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const columns = [

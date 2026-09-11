@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Switch, message, Typography, Tag } from 'antd';
+import { App, Table, Button, Modal, Form, Input, Switch, Typography, Tag } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { branchesApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
 
 export default function BranchesPage() {
+  const { message } = App.useApp();
   const { setBranches } = useUiStore();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -13,25 +14,42 @@ export default function BranchesPage() {
 
   const load = () => {
     setLoading(true);
-    branchesApi.list().then((data) => {
-      setItems(data);
-      setBranches(data);
-    }).finally(() => setLoading(false));
+    branchesApi
+      .list()
+      .then((data) => {
+        setItems(data);
+        setBranches(data);
+      })
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách chi nhánh.'))
+      .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
   const onCreate = async () => {
-    const values = await form.validateFields();
-    await branchesApi.create(values);
-    message.success('Đã thêm chi nhánh.');
-    setModalOpen(false);
-    form.resetFields();
-    load();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
+    try {
+      await branchesApi.create(values);
+      message.success('Đã thêm chi nhánh.');
+      setModalOpen(false);
+      form.resetFields();
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const onToggle = async (id) => {
-    await branchesApi.toggle(id);
-    load();
+    try {
+      await branchesApi.toggle(id);
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const columns = [

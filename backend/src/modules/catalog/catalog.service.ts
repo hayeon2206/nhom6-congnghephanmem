@@ -9,11 +9,11 @@ export async function listCategories(tenantId: string) {
   return prisma.category.findMany({ where: { tenantId }, orderBy: { name: 'asc' } });
 }
 
-export async function createCategory(tenantId: string, input: { name: string; description?: string; parentCategoryId?: string }) {
+export async function createCategory(tenantId: string, input: { name: string; description?: string; imageUrl?: string; parentCategoryId?: string }) {
   return prisma.category.create({ data: { tenantId, ...input } });
 }
 
-export async function updateCategory(tenantId: string, id: string, input: Partial<{ name: string; description: string; parentCategoryId: string }>) {
+export async function updateCategory(tenantId: string, id: string, input: Partial<{ name: string; description: string; imageUrl: string; parentCategoryId: string }>) {
   const category = await prisma.category.findFirst({ where: { id, tenantId } });
   if (!category) throw new NotFoundError('Không tìm thấy danh mục.');
   return prisma.category.update({ where: { id }, data: input });
@@ -31,11 +31,11 @@ export async function listBrands(tenantId: string) {
   return prisma.brand.findMany({ where: { tenantId }, orderBy: { name: 'asc' } });
 }
 
-export async function createBrand(tenantId: string, input: { name: string; description?: string }) {
+export async function createBrand(tenantId: string, input: { name: string; description?: string; imageUrl?: string }) {
   return prisma.brand.create({ data: { tenantId, ...input } });
 }
 
-export async function updateBrand(tenantId: string, id: string, input: Partial<{ name: string; description: string }>) {
+export async function updateBrand(tenantId: string, id: string, input: Partial<{ name: string; description: string; imageUrl: string }>) {
   const brand = await prisma.brand.findFirst({ where: { id, tenantId } });
   if (!brand) throw new NotFoundError('Không tìm thấy thương hiệu.');
   return prisma.brand.update({ where: { id }, data: input });
@@ -55,6 +55,7 @@ export interface ProductInput {
   barcode?: string;
   categoryId?: string;
   brandId?: string;
+  imageUrl?: string;
   attributes?: Record<string, string>;
   costPrice?: number;
   sellingPrice: number;
@@ -77,6 +78,7 @@ export async function createProduct(tenantId: string, input: ProductInput) {
         barcode,
         categoryId: input.categoryId,
         brandId: input.brandId,
+        imageUrl: input.imageUrl,
         attributes: input.attributes as Prisma.InputJsonValue | undefined,
         costPrice: input.costPrice ?? 0,
         sellingPrice: input.sellingPrice,

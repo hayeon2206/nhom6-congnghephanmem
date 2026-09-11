@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
 export const posLookupSchema = z.object({
-  q: z.string().min(1),
+  // Empty q intentionally allowed — the POS screen calls this with '' to
+  // populate its "recommended products" grid before the cashier types anything.
+  q: z.string().default(''),
   branchId: z.string().uuid(),
 });
 

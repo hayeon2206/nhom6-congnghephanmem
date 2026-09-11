@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Table, Typography, Tag, Select } from 'antd';
+import { App, Table, Typography, Tag, Select } from 'antd';
 import { inventoryApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
 
 export default function StockPage() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    inventoryApi.stock(selectedBranchId).then(setItems).finally(() => setLoading(false));
+    inventoryApi
+      .stock(selectedBranchId)
+      .then(setItems)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được tồn kho theo chi nhánh.'))
+      .finally(() => setLoading(false));
   }, [selectedBranchId]);
 
   const columns = [

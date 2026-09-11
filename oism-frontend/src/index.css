@@ -7,12 +7,13 @@
 
 :root {
   /* Brand */
-  --color-primary: #0f172a; /* navy — sidebar, headings, high-emphasis text */
+  --color-primary: #0b1e33; /* deep-ocean navy — sidebar, auth panel, headings */
   --color-primary-foreground: #ffffff;
   --color-accent: #0369a1; /* blue — primary actions, links, active states */
   --color-accent-hover: #075985;
   --color-accent-foreground: #ffffff;
   --color-accent-soft: #e0f2fe; /* light blue fill for badges/highlights */
+  --color-gold: #d9b978; /* single warm accent, reserved for the whale/auth moment only */
 
   /* Surfaces */
   --color-bg: #f8fafc;
@@ -36,6 +37,7 @@
 
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif; /* characterful variable serif (opsz/SOFT/WONK) — wordmark & hero moments only, never body/data */
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Spacing — dense scale for dashboard density */
@@ -136,6 +138,33 @@ body {
 
 .stat-card:hover {
   box-shadow: var(--shadow-elevated);
+  transform: translateY(-2px);
+}
+
+/* One fade-and-rise per route change — the single page-level motion cue,
+   replayed by keying the wrapper on location.pathname in MainLayout. */
+.page-transition {
+  animation: page-fade-in 320ms ease-out both;
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tactile press feedback on every AntD button, app-wide. */
+.ant-btn {
+  transition: transform 120ms ease, box-shadow 150ms ease, background 150ms ease, color 150ms ease, border-color 150ms ease !important;
+}
+
+.ant-btn:not(:disabled):active {
+  transform: scale(0.97);
 }
 
 .surface-card {
@@ -179,18 +208,279 @@ body {
   border-radius: var(--radius-lg);
 }
 
-.pos-result-item:hover {
+.pos-result-card {
+  cursor: pointer;
+}
+
+.pos-result-cover {
+  height: 96px;
+  object-fit: cover;
   background: var(--color-surface-muted);
 }
 
-/* Auth screens: brand panel only makes sense once there's room beside the form. */
+.pos-result-cover-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--color-text-tertiary);
+}
+
+/* ---------- Auth brand panel: the sea moment ----------
+   Only shown once there's room beside the form. A third of the viewport on
+   wide screens so the wave effect reads as a real feature, not a sidebar
+   decoration — floored at 480px so it never gets cramped near the 900px
+   breakpoint. Type sizes below scale with vw for the same reason: they're
+   sized relative to this column's own width, not a fixed viewport share. */
 .auth-brand-panel {
   display: none;
+  width: 33.333vw;
+  min-width: 480px;
+  flex-shrink: 0;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 52px 48px 40px;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
 }
 
 @media (min-width: 900px) {
   .auth-brand-panel {
     display: flex;
+  }
+}
+
+.auth-brand-top {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-brand-eyebrow {
+  font-size: clamp(12px, 0.9vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(217, 185, 120, 0.85);
+  margin-bottom: 10px;
+}
+
+.auth-brand-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 130, 'SOFT' 60, 'WONK' 1;
+  font-size: clamp(64px, 6.2vw, 112px);
+  line-height: 1;
+  letter-spacing: 0.005em;
+  margin: 0;
+  color: #fff;
+}
+
+.auth-brand-rule {
+  width: 56px;
+  height: 2px;
+  background: var(--color-gold);
+  margin-top: 20px;
+}
+
+.auth-brand-spacer {
+  flex: 1;
+  min-height: 0;
+}
+
+.auth-brand-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, transparent, rgba(11, 30, 51, 0.55) 40%);
+}
+
+/* ---------- Interactive wave field (WebGL) ----------
+   Vanta.js (Three.js) draws its own canvas into this container and runs
+   its own animation loop (see VantaWaves.jsx) — this rule only sizes and
+   positions the container it mounts into. */
+.auth-panel-waves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ---------- Auth form side: light panel ---------- */
+.auth-form-panel {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+/* The whale as a sunken watermark — desaturated and barely-there, so it
+   reads as texture on the page rather than a second illustration
+   competing with the form. Grayscale removes the source painting's cream
+   paper tone almost entirely at this opacity, so no cutout is needed. */
+.auth-form-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1100px;
+  max-width: 190%;
+  transform: translate(-50%, -46%);
+  opacity: 0.055;
+  filter: grayscale(1) contrast(1.15);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auth-form-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+/* The login/register headline rests at the normal navy heading color and,
+   every ~7s, a gold shine sweeps all the way across it (left to right) and
+   back to resting — "thỉnh thoảng lấp lánh" rather than a constant shine,
+   same family as the whale sparkle and flip-word shimmer elsewhere on these
+   screens. The gold band starts and ends fully off-canvas (150%/-50%
+   position against a 250%-wide gradient) so the sweep visibly travels the
+   full width of the text instead of popping in over just part of it. */
+.auth-form-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 52px;
+  letter-spacing: 0.005em;
+  margin: 0 0 6px;
+  background: linear-gradient(
+    100deg,
+    var(--color-primary) 0%,
+    var(--color-primary) 40%,
+    var(--color-gold) 48%,
+    #fff7e0 50%,
+    var(--color-gold) 52%,
+    var(--color-primary) 60%,
+    var(--color-primary) 100%
+  );
+  background-size: 250% auto;
+  background-position: 150% center;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: auth-title-shimmer 7s ease-in-out infinite;
+}
+
+@keyframes auth-title-shimmer {
+  0%,
+  55% {
+    background-position: 150% center;
+  }
+  85%,
+  100% {
+    background-position: -50% center;
+  }
+}
+
+.auth-brand-stat-value {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 2.6vw, 42px);
+  font-weight: 600;
+  color: var(--color-gold);
+  line-height: 1.1;
+}
+
+.auth-brand-stat-label {
+  font-size: clamp(12.5px, 0.95vw, 15px);
+  font-weight: 600;
+  color: #fff;
+  margin-top: 6px;
+  line-height: 1.35;
+}
+
+.auth-brand-stat-hint {
+  font-size: clamp(11px, 0.8vw, 13px);
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 2px;
+}
+
+/* ---------- Brand-moment intro: typed reveal, tagline, flip word ---------- */
+.auth-brand-slogan {
+  margin-top: 14px;
+  font-size: clamp(13px, 1.05vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.8);
+  min-height: 1.4em;
+}
+
+.typewriter-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 2px;
+  background: currentColor;
+  vertical-align: -0.1em;
+  animation: typewriter-blink 800ms step-end infinite;
+}
+
+@keyframes typewriter-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.flip-word-stage {
+  display: inline-block;
+  perspective: 400px;
+  animation: page-fade-in 260ms ease-out both;
+}
+
+.flip-word {
+  display: inline-block;
+  font-weight: 700;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.flip-word-flipping {
+  animation: flip-word-spin 520ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+@keyframes flip-word-spin {
+  0% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(-90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+.flip-word-shine {
+  background: linear-gradient(90deg, var(--color-gold) 0%, #fff7e0 25%, var(--color-gold) 50%, #fff7e0 75%, var(--color-gold) 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: flip-word-shimmer 2.4s linear infinite;
+}
+
+@keyframes flip-word-shimmer {
+  to {
+    background-position: -220% center;
   }
 }
 

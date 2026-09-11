@@ -14,14 +14,20 @@ import { ordersRouter } from './modules/orders/orders.routes';
 import { posRouter } from './modules/pos/pos.routes';
 import { reportsRouter } from './modules/reports/reports.routes';
 import { webhooksRouter } from './modules/webhooks/webhooks.routes';
+import { uploadsDir, uploadsRouter } from './modules/uploads/uploads.routes';
 
 export function createApp() {
   const app = express();
 
-  app.use(helmet());
+  // Product/category/brand photos are fetched cross-origin from the frontend
+  // dev server's own port, so the default same-origin resource policy has to
+  // be relaxed or the browser silently refuses to render them.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
   app.use(express.json());
   if (!env.isTest) app.use(morgan('dev'));
+
+  app.use('/uploads', express.static(uploadsDir));
 
   app.get('/health', (_req: Request, res: Response) => res.json({ status: 'ok', service: 'oism-backend' }));
 
@@ -36,6 +42,7 @@ export function createApp() {
   app.use('/api/pos', posRouter);
   app.use('/api/reports', reportsRouter);
   app.use('/api/webhooks', webhooksRouter);
+  app.use('/api/uploads', uploadsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

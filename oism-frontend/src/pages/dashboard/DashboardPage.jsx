@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Row, Col, Card, Typography, List, Tag, Spin, Empty } from 'antd';
+import { App, Row, Col, Card, Typography, List, Tag, Spin } from 'antd';
 import {
   WalletOutlined,
   RiseOutlined,
@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { reportsApi, ordersApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
 import { money } from '../../utils/format';
+import BrandEmpty from '../../components/BrandEmpty';
 
 function StatCard({ icon, tone, label, value, hint }) {
   const tones = {
@@ -22,7 +23,7 @@ function StatCard({ icon, tone, label, value, hint }) {
   }[tone];
 
   return (
-    <Card className="stat-card" bodyStyle={{ padding: 20 }}>
+    <Card className="stat-card" styles={{ body: { padding: 20 } }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
           <div style={{ color: 'var(--color-text-secondary)', fontSize: 13, fontWeight: 500 }}>{label}</div>
@@ -53,6 +54,7 @@ function StatCard({ icon, tone, label, value, hint }) {
 }
 
 export default function DashboardPage() {
+  const { message } = App.useApp();
   const { selectedBranchId } = useUiStore();
   const [revenue, setRevenue] = useState(null);
   const [alerts, setAlerts] = useState([]);
@@ -73,6 +75,7 @@ export default function DashboardPage() {
         setAlerts(stockAlerts);
         setPendingOrders(orders.items);
       })
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được dữ liệu tổng quan.'))
       .finally(() => setLoading(false));
   }, [selectedBranchId]);
 
@@ -125,7 +128,7 @@ export default function DashboardPage() {
           >
             <List
               dataSource={pendingOrders}
-              locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có đơn nào đang chờ" /> }}
+              locale={{ emptyText: <BrandEmpty description="Không có đơn nào đang chờ" /> }}
               renderItem={(o) => (
                 <List.Item>
                   <List.Item.Meta
@@ -149,7 +152,7 @@ export default function DashboardPage() {
           >
             <List
               dataSource={alerts.slice(0, 8)}
-              locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Tồn kho đang ổn định" /> }}
+              locale={{ emptyText: <BrandEmpty description="Tồn kho đang ổn định" /> }}
               renderItem={(a) => (
                 <List.Item>
                   <List.Item.Meta title={`${a.productName} (${a.skuCode})`} description={a.branchName} />

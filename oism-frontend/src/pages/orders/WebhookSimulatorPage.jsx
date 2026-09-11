@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Card, Form, Select, Input, InputNumber, Button, Space, Typography, message, Table, Tag, Row, Col, Alert } from 'antd';
+import { App, Card, Form, Select, Input, InputNumber, Button, Space, Typography, Table, Tag, Row, Col, Alert } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SendOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { webhooksApi, productsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
 
 export default function WebhookSimulatorPage() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId } = useUiStore();
   const [products, setProducts] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -15,15 +16,27 @@ export default function WebhookSimulatorPage() {
   const [sending, setSending] = useState(false);
   const [bursting, setBursting] = useState(false);
 
-  const loadLogs = () => webhooksApi.logs().then(setLogs);
+  const loadLogs = () =>
+    webhooksApi
+      .logs()
+      .then(setLogs)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được nhật ký webhook.'));
 
   useEffect(() => {
     loadLogs();
-    productsApi.search({ pageSize: 200 }).then((d) => setProducts(d.items));
+    productsApi
+      .search({ pageSize: 200 })
+      .then((d) => setProducts(d.items))
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách sản phẩm.'));
   }, []);
 
   const sendSingle = async () => {
-    const values = await singleForm.validateFields();
+    let values;
+    try {
+      values = await singleForm.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
     setSending(true);
     try {
       const result = await webhooksApi.simulate({
@@ -46,13 +59,20 @@ export default function WebhookSimulatorPage() {
   };
 
   const runBurst = async () => {
-    const values = await burstForm.validateFields();
+    let values;
+    try {
+      values = await burstForm.validateFields();
+    } catch {
+      return;
+    }
     setBursting(true);
     setBurstResult(null);
     try {
       const result = await webhooksApi.burst(values);
       setBurstResult(result);
       loadLogs();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Chạy kiểm thử thất bại.');
     } finally {
       setBursting(false);
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Tabs, Typography, Row, Col, Card, Statistic, DatePicker, Select, Space, Table, Progress, Tag } from 'antd';
+import { App, Tabs, Typography, Row, Col, Card, Statistic, DatePicker, Select, Space, Table, Progress, Tag } from 'antd';
 import dayjs from 'dayjs';
 import { reportsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
@@ -8,6 +8,7 @@ import { money } from '../../utils/format';
 const { RangePicker } = DatePicker;
 
 function RevenueTab() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
   const [range, setRange] = useState([dayjs().startOf('month'), dayjs()]);
   const [report, setReport] = useState(null);
@@ -15,7 +16,8 @@ function RevenueTab() {
   useEffect(() => {
     reportsApi
       .revenue({ from: range[0]?.toISOString(), to: range[1]?.toISOString(), branchId: selectedBranchId })
-      .then(setReport);
+      .then(setReport)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được báo cáo doanh thu.'));
   }, [range, selectedBranchId]);
 
   const maxRevenue = Math.max(1, ...(report?.revenueByProduct.map((p) => p.value) ?? [1]));
@@ -68,11 +70,15 @@ function RevenueTab() {
 }
 
 function VelocityTab() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
   const [report, setReport] = useState(null);
 
   useEffect(() => {
-    reportsApi.velocity({ branchId: selectedBranchId }).then(setReport);
+    reportsApi
+      .velocity({ branchId: selectedBranchId })
+      .then(setReport)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được báo cáo vòng quay tồn kho.'));
   }, [selectedBranchId]);
 
   return (
@@ -126,11 +132,15 @@ function VelocityTab() {
 }
 
 function StockAlertsTab() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId, setSelectedBranchId } = useUiStore();
   const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
-    reportsApi.stockAlerts(selectedBranchId).then(setAlerts);
+    reportsApi
+      .stockAlerts(selectedBranchId)
+      .then(setAlerts)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được cảnh báo tồn kho.'));
   }, [selectedBranchId]);
 
   return (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Select, InputNumber, Space, Tag, message, Typography, Input, Popconfirm } from 'antd';
+import { App, Table, Button, Modal, Form, Select, InputNumber, Space, Tag, Typography, Input, Popconfirm } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SendOutlined, InboxOutlined, CloseOutlined } from '@ant-design/icons';
 import { inventoryApi, productsApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
@@ -12,6 +12,7 @@ const STATUS_TAG = {
 };
 
 export default function TransfersPage() {
+  const { message } = App.useApp();
   const { branches } = useUiStore();
   const [items, setItems] = useState([]);
   const [products, setProducts] = useState([]);
@@ -21,21 +22,37 @@ export default function TransfersPage() {
 
   const load = () => {
     setLoading(true);
-    inventoryApi.transfers.list().then(setItems).finally(() => setLoading(false));
+    inventoryApi.transfers
+      .list()
+      .then(setItems)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách phiếu chuyển kho.'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
     load();
-    productsApi.search({ pageSize: 200 }).then((d) => setProducts(d.items));
+    productsApi
+      .search({ pageSize: 200 })
+      .then((d) => setProducts(d.items))
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách sản phẩm.'));
   }, []);
 
   const onCreate = async () => {
-    const values = await form.validateFields();
-    await inventoryApi.transfers.create(values);
-    message.success('Đã tạo phiếu chuyển kho (nháp).');
-    setModalOpen(false);
-    form.resetFields();
-    load();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
+    try {
+      await inventoryApi.transfers.create(values);
+      message.success('Đã tạo phiếu chuyển kho (nháp).');
+      setModalOpen(false);
+      form.resetFields();
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const act = async (fn, id, okMsg) => {

@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, App as AntApp } from 'antd';
 import viVN from 'antd/locale/vi_VN';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
@@ -24,36 +24,38 @@ import BranchesPage from './pages/admin/BranchesPage';
 function App() {
   return (
     <ConfigProvider locale={viVN} theme={antdTheme}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+      <AntApp>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route element={<MainLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/pos" element={<PosPage />} />
-              <Route path="/catalog" element={<CatalogPage />} />
-              <Route path="/inventory/stock" element={<StockPage />} />
-              <Route path="/inventory/receipts" element={<PurchaseReceiptsPage />} />
-              <Route path="/inventory/transfers" element={<TransfersPage />} />
-              <Route path="/inventory/stocktake" element={<StocktakePage />} />
-              <Route path="/inventory/ledger" element={<LedgerPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/webhook-simulator" element={<WebhookSimulatorPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<MainLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/pos" element={<PosPage />} />
+                <Route path="/catalog" element={<CatalogPage />} />
+                <Route path="/inventory/stock" element={<StockPage />} />
+                <Route path="/inventory/receipts" element={<PurchaseReceiptsPage />} />
+                <Route path="/inventory/transfers" element={<TransfersPage />} />
+                <Route path="/inventory/stocktake" element={<StocktakePage />} />
+                <Route path="/inventory/ledger" element={<LedgerPage />} />
+                <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+                <Route path="/webhook-simulator" element={<WebhookSimulatorPage />} />
 
-              <Route element={<ProtectedRoute roles={['OWNER']} />}>
-                <Route path="/admin/users" element={<UsersPage />} />
-                <Route path="/admin/branches" element={<BranchesPage />} />
+                <Route element={<ProtectedRoute roles={['OWNER']} />}>
+                  <Route path="/admin/users" element={<UsersPage />} />
+                  <Route path="/admin/branches" element={<BranchesPage />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AntApp>
     </ConfigProvider>
   );
 }

@@ -37,6 +37,15 @@ export const productsApi = {
   update: (id, data) => axiosClient.patch(`/products/${id}`, data).then((r) => r.data),
 };
 
+// Image uploads for product/category/brand photos (FR-PROD)
+export const uploadsApi = {
+  uploadImage: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axiosClient.post('/uploads/image', formData).then((r) => r.data);
+  },
+};
+
 // Inventory: stock, ledger, purchase receipts, transfers, stocktake (FR-INV)
 export const inventoryApi = {
   stock: (branchId) => axiosClient.get('/inventory/stock', { params: { branchId } }).then((r) => r.data),

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Select, InputNumber, Space, Tag, message, Typography, Input } from 'antd';
+import { App, Table, Button, Modal, Form, Select, InputNumber, Space, Tag, Typography, Input } from 'antd';
 import { PlusOutlined, CheckOutlined } from '@ant-design/icons';
 import { inventoryApi } from '../../api/resources';
 import { useUiStore } from '../../store/uiStore';
 
 export default function StocktakePage() {
+  const { message } = App.useApp();
   const { branches, selectedBranchId } = useUiStore();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,17 +16,30 @@ export default function StocktakePage() {
 
   const load = () => {
     setLoading(true);
-    inventoryApi.stocktake.list().then(setSessions).finally(() => setLoading(false));
+    inventoryApi.stocktake
+      .list()
+      .then(setSessions)
+      .catch((err) => message.error(err.response?.data?.message ?? 'Không tải được danh sách phiên kiểm kê.'))
+      .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
   const onOpenSession = async () => {
-    const values = await form.validateFields();
-    await inventoryApi.stocktake.open(values);
-    message.success('Đã mở phiên kiểm kê — hệ thống đã chốt số liệu tồn kho hiện tại.');
-    setOpenModal(false);
-    form.resetFields();
-    load();
+    let values;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return; // invalid fields — AntD already highlights them inline
+    }
+    try {
+      await inventoryApi.stocktake.open(values);
+      message.success('Đã mở phiên kiểm kê — hệ thống đã chốt số liệu tồn kho hiện tại.');
+      setOpenModal(false);
+      form.resetFields();
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const startCounting = (session) => {
@@ -35,10 +49,14 @@ export default function StocktakePage() {
 
   const submitCount = async () => {
     const items = Object.entries(counts).map(([productId, countedQty]) => ({ productId, countedQty }));
-    await inventoryApi.stocktake.complete(countModal.id, items);
-    message.success('Đã hoàn tất kiểm kê — chênh lệch đã được ghi vào sổ cái tồn kho.');
-    setCountModal(null);
-    load();
+    try {
+      await inventoryApi.stocktake.complete(countModal.id, items);
+      message.success('Đã hoàn tất kiểm kê — chênh lệch đã được ghi vào sổ cái tồn kho.');
+      setCountModal(null);
+      load();
+    } catch (err) {
+      message.error(err.response?.data?.message ?? 'Có lỗi xảy ra.');
+    }
   };
 
   const columns = [

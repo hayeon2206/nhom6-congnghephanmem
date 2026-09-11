@@ -136,6 +136,7 @@ model Brand {
   tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name        String
   description String?
+  imageUrl    String?
   products    Product[]
 
   @@unique([tenantId, name])
@@ -148,6 +149,7 @@ model Category {
   tenant           Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name             String
   description      String?
+  imageUrl         String?
   parentCategoryId String?
   parentCategory   Category?  @relation("CategoryTree", fields: [parentCategoryId], references: [id])
   children         Category[] @relation("CategoryTree")
@@ -168,6 +170,7 @@ model Product {
   brandId           String?
   brand             Brand?    @relation(fields: [brandId], references: [id])
   attributes        Json?    // eg. { "color": "Do", "size": "M" } for variant-style products
+  imageUrl          String?
   costPrice         Decimal  @default(0) @db.Decimal(18, 2)
   sellingPrice      Decimal  @default(0) @db.Decimal(18, 2)
   wholesalePrice    Decimal? @db.Decimal(18, 2)
